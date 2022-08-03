@@ -236,6 +236,7 @@ export async function init( bot: BOT ): Promise<PluginSetting> {
 	
 	return {
 		pluginName: "hot-news",
-		cfgList: [ subscribe_news, unsubscribe_news, limit_genshin_dynamic_notify, my_subscribe_list, remove_subscribe ]
+		cfgList: [ subscribe_news, unsubscribe_news, limit_genshin_dynamic_notify, my_subscribe_list, remove_subscribe ],
+		repo: "BennettChina/hot-news"
 	};
 }
