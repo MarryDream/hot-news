@@ -37,8 +37,6 @@ export default class NewsConfig {
 		limitTimes: number;
 		limitTime: number;
 	}
-	
-	
 	public static init = {
 		maxSubscribeNum: 5,
 		biliDynamicScheduleRule: "0 0/3 * * * *",
@@ -61,8 +59,11 @@ export default class NewsConfig {
 			enable: true,
 			limitTimes: 3,
 			limitTime: 1
-		}
+		},
+		vvhanCdn: ""
 	};
+	/** vvhan.com的CDN配置 */
+	public vvhanCdn: string;
 	
 	constructor( config: any ) {
 		this.maxSubscribeNum = config.maxSubscribeNum;
@@ -87,6 +88,7 @@ export default class NewsConfig {
 			limitTimes: config.pushLimit.limitTimes,
 			limitTime: config.pushLimit.limitTime,
 		};
+		this.vvhanCdn = config.vvhanCdn;
 	}
 	
 	public async refresh( config ): Promise<string> {
@@ -113,6 +115,7 @@ export default class NewsConfig {
 				limitTimes: config.pushLimit.limitTimes,
 				limitTime: config.pushLimit.limitTime,
 			};
+			this.vvhanCdn = config.vvhanCdn;
 			return "hot_news.yml 重新加载完毕";
 		} catch ( error ) {
 			throw <RefreshCatch>{

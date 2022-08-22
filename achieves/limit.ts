@@ -16,5 +16,5 @@ export async function main( { sendMessage, messageData, redis }: InputParameter 
 	
 	const number = parseInt( messageData.raw_message );
 	await redis.setString( `${ DB_KEY.limit_bili_dynamic_time_key }.${ targetId }`, number );
-	await sendMessage( `已将${ number }小时设置为原神动态消息过时时间，超过该时间的消息将不再推送` );
+	await sendMessage( `已将${ number }小时设置为B站动态消息过时时间，超过该时间的消息将不再推送` );
 }

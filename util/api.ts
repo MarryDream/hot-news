@@ -4,6 +4,7 @@ import { formatDate } from "#hot-news/util/tools";
 import { DB_KEY } from "#hot-news/util/constants";
 import { BiliDynamicCard, BiliLiveInfo, News } from "#hot-news/types/type";
 import moment from "moment";
+import { config } from "#hot-news/init";
 
 const API = {
 	sina: 'https://www.anyknew.com/api/v1/sites/sina',
@@ -15,6 +16,7 @@ const API = {
 	biliInfo: 'https://api.bilibili.com/x/space/acc/info',
 	moyu: 'https://api.vvhan.com/api/moyu?type=json',
 	moyu2: 'https://api.j4u.ink/proxy/redirect/moyu/calendar/$.png',
+	"60s": 'https://api.vvhan.com/api/60s?ts=$',
 }
 
 const NEWS_HEADERS = {
@@ -177,8 +179,17 @@ export async function getMoyuImg(): Promise<string> {
 		return url;
 	}
 	
+	let baseurl: string = API.moyu;
+	let headers = {};
+	if ( config.vvhanCdn ) {
+		baseurl = baseurl.replace( "https://api.vvhan.com", config.vvhanCdn );
+		headers = {
+			"Referer": "https://hibennett.cn/?bot=SilveryStar/Adachi-BOT&plugin=hot-news&version=v1"
+		}
+	}
+	
 	return new Promise( resolve => {
-		axios.get( API.moyu, { timeout: 5000 } )
+		axios.get( baseurl, { timeout: 5000, headers } )
 			.then( response => {
 				if ( response.data.success ) {
 					const imgUrl = response.data.url;
@@ -199,4 +210,13 @@ export async function getMoyuImg(): Promise<string> {
 export function getMoyuUrl(): string {
 	const today: string = moment().format( "yyMMDD" );
 	return API.moyu2.replace( "$", today );
+}
+
+export function get60s(): string {
+	const today: string = formatDate( new Date(), "" );
+	let api = API["60s"].replace( "$", today );
+	if ( config.vvhanCdn ) {
+		api = api.replace( "https://api.vvhan.com", config.vvhanCdn );
+	}
+	return api;
 }

@@ -44,7 +44,12 @@ export class ScheduleNews {
 			const time = new Date().setSeconds( sec * 10 );
 			
 			const job: Job = scheduleJob( time, async () => {
-				await NewsServiceFactory.instance( CHANNEL_NAME.toutiao ).handler();
+				NewsServiceFactory.instance( CHANNEL_NAME.toutiao ).handler().then( () => {
+					this.bot.logger.debug( "[hot-news] 每日热点新闻定时任务已处理完成." );
+				} );
+				NewsServiceFactory.instance( CHANNEL_NAME["60sNews"] ).handler().then( () => {
+					this.bot.logger.debug( "[hot-news] 60s新闻定时任务已处理完成." );
+				} );
 				job.cancel();
 			} );
 		} );

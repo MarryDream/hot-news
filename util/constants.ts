@@ -31,4 +31,5 @@ export const CHANNEL_NAME = {
 	baidu: '百度',
 	genshin: '原神',
 	moyu: '摸鱼',
+	"60sNews": '60秒新闻',
 }

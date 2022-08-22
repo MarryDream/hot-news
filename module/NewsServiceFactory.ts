@@ -2,6 +2,7 @@ import { HotNewsServiceImpl } from "#hot-news/module/news/impl/HotNewsServiceImp
 import { NewsService } from "#hot-news/module/news/NewsService";
 import { CHANNEL_NAME } from "#hot-news/util/constants";
 import { MessAroundServiceImpl } from "#hot-news/module/news/impl/MessAroundServiceImpl";
+import { SixtySecondsWatchNews } from "#hot-news/module/news/impl/SixtySecondsWatchNews";
 
 export class NewsServiceFactory {
 	/**
@@ -18,6 +19,8 @@ export class NewsServiceFactory {
 				return new HotNewsServiceImpl();
 			case CHANNEL_NAME.moyu:
 				return new MessAroundServiceImpl();
+			case CHANNEL_NAME["60sNews"]:
+				return new SixtySecondsWatchNews();
 			default:
 				throw "不支持的订阅渠道";
 		}

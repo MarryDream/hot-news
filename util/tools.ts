@@ -2,9 +2,9 @@ import { isGroupMessage, isPrivateMessage, Message, MessageType } from "@modules
 import { ChatInfo } from "#hot-news/types/type";
 import { CHANNEL_NAME } from "#hot-news/util/constants";
 
-export const formatDate: ( date: Date ) => string = ( date ) => {
+export const formatDate: ( date: Date, format?: string ) => string = ( date, format = "-" ) => {
 	const dateArr: number[] = [ date.getFullYear(), date.getMonth() + 1, date.getDate() ];
-	return dateArr.join( '-' );
+	return dateArr.join( format );
 }
 
 export const formatTimestamp: ( timestamp: number ) => string = ( timestamp ) => {
@@ -37,7 +37,7 @@ export const getChatInfo: ( messageData: Message ) => ChatInfo = ( messageData )
 }
 
 export const getChannelKey: ( channel: string ) => ( string | number | null ) = ( channel ) => {
-	const reg = new RegExp( /\d+/ );
+	const reg = new RegExp( /^[0-9]+$/ );
 	const isNumber = reg.test( channel );
 	if ( isNumber ) {
 		return parseInt( reg.exec( channel )![0] );
