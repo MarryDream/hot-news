@@ -1,6 +1,6 @@
 import { NewsService } from "#hot-news/module/news/NewsService";
 import { getNews } from "#hot-news/util/api";
-import { DB_KEY } from "#hot-news/util/constants";
+import { CHANNEL_NAME, DB_KEY } from "#hot-news/util/constants";
 import { ChatInfo } from "#hot-news/types/type";
 import { getHashField } from "#hot-news/util/RedisUtils";
 import bot from "ROOT";
@@ -45,6 +45,7 @@ export class HotNewsServiceImpl implements NewsService {
 			}
 			for ( let c of channels ) {
 				const news = await getNews( c );
+				bot.logger.info( `[hot-news] - [${ targetId }] - 获取到 [${ CHANNEL_NAME[c] }] 新闻` );
 				await MessageMethod.sendMsg( type, targetId, news );
 			}
 			

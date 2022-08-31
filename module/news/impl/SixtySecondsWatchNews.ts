@@ -28,7 +28,6 @@ export class SixtySecondsWatchNews implements NewsService {
 		}
 		
 		const msg = await this.getInfo();
-		bot.logger.info( `[hot-news]获取到60s新闻图: ${ msg }` );
 		let i = 0;
 		for ( let id of set ) {
 			const { type, targetId }: ChatInfo = JSON.parse( id );
@@ -40,6 +39,7 @@ export class SixtySecondsWatchNews implements NewsService {
 			channel = channel.startsWith( "[" ) ? channel : `["${ channel }"]`;
 			const channels: string[] = JSON.parse( channel ) || "[]";
 			if ( channels.includes( "60sNews" ) ) {
+				bot.logger.info( `[hot-news] - [${ targetId }] - 获取到60s新闻图: ${ msg }` );
 				await MessageMethod.sendMsg( type, targetId, msg );
 				i++;
 				if ( config.pushLimit.enable && i > config.pushLimit.limitTimes ) {

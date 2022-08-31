@@ -199,8 +199,8 @@ export async function subInfo(): Promise<PluginSubSetting> {
 
 function decreaseGroup( bot: BOT ) {
 	return async function ( memberData: MemberDecreaseEventData ) {
-		// 如果退出群聊的是 BOT 那么就把该群聊的新闻订阅全部取消
-		if ( memberData.user_id === bot.config.number ) {
+		// 如果退出群聊的是 BOT 或者群被解散那么就把该群聊的新闻订阅全部取消
+		if ( memberData.user_id === bot.config.number || memberData.dismiss ) {
 			await clearSubscribe( memberData.user_id, MessageType.Group, bot );
 		}
 	}

@@ -37,6 +37,9 @@ export default class NewsConfig {
 		limitTimes: number;
 		limitTime: number;
 	}
+	/** vvhan.com的CDN配置 */
+	public vvhanCdn: string;
+	
 	public static init = {
 		maxSubscribeNum: 5,
 		biliDynamicScheduleRule: "0 0/3 * * * *",
@@ -62,8 +65,6 @@ export default class NewsConfig {
 		},
 		vvhanCdn: ""
 	};
-	/** vvhan.com的CDN配置 */
-	public vvhanCdn: string;
 	
 	constructor( config: any ) {
 		this.maxSubscribeNum = config.maxSubscribeNum;
