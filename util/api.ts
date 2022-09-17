@@ -29,7 +29,7 @@ const NEWS_HEADERS = {
 
 const BILIBILI_DYNAMIC_HEADERS = {
 	"Origin": "https://space.bilibili.com",
-	"Referer": "https://space.bilibili.com/401742377/dynamic",
+	"Referer": "https://space.bilibili.com/$/dynamic",
 	"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36",
 	"Accept": "application/json, text/plain, */*",
 	"Accept-Encoding": "gzip, deflate, br",
@@ -89,6 +89,7 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 	// 已经发布的动态ID
 	const dynamicIdList: string[] = await bot.redis.getSet( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }` );
 	
+	BILIBILI_DYNAMIC_HEADERS.Referer.replace( "$", uid.toString( 10 ) );
 	return new Promise( ( resolve ) => {
 		axios.get( API.biliDynamic, {
 			params: {
@@ -141,12 +142,16 @@ export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number
 		return Promise.resolve( JSON.parse( live_info ) );
 	}
 	
+	BILIBILI_DYNAMIC_HEADERS.Referer.replace( "$", uid.toString( 10 ) );
 	return new Promise( ( resolve ) => {
 		axios.get( API.biliInfo, {
 			params: {
 				mid: uid,
-				jsonp: 'jsonp'
+				jsonp: 'jsonp',
+				platform: 'web',
+				token: ''
 			},
+			headers: BILIBILI_DYNAMIC_HEADERS,
 			timeout: 5000
 		} ).then( r => {
 			if ( r.data.code !== 0 ) {
