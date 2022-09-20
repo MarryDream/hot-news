@@ -11,7 +11,7 @@ export class ScreenshotService {
 		await page.$eval( "#internationalHeader", element => element.remove() );
 		let card = await page.waitForSelector( ".card" );
 		let clip = await card?.boundingBox();
-		let bar = await page.waitForSelector( ".text-bar" )
+		let bar = await page.waitForSelector( ".bili-dyn-item__footer" )
 		let bar_bound = await bar?.boundingBox();
 		clip!.height = bar_bound!.y - clip!.y;
 		return await page.screenshot( {
