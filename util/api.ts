@@ -30,10 +30,17 @@ const NEWS_HEADERS = {
 const BILIBILI_DYNAMIC_HEADERS = {
 	"Origin": "https://space.bilibili.com",
 	"Referer": "https://space.bilibili.com/$/dynamic",
-	"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36",
-	"Accept": "application/json, text/plain, */*",
-	"Accept-Encoding": "gzip, deflate, br",
-	"Connection": "keep-alive"
+	"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36",
+	"Accept": "application/json",
+	"Connection": "keep-alive",
+	"dnt": "1",
+	"sec-ch-ua": '"Google Chrome";v="105", "Not)A;Brand";v="8", "Chromium";v="105"',
+	"sec-ch-ua-mobile": "?0",
+	"sec-ch-ua-platform": "macOS",
+	"sec-fetch-dest": "empty",
+	"sec-fetch-mode": "cors",
+	"sec-fetch-site": "same-site",
+	"sec-gpc": "1",
 }
 
 export const getNews: ( channel?: string ) => Promise<string> = async ( channel: string = 'toutiao' ) => {
@@ -89,7 +96,7 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 	// 已经发布的动态ID
 	const dynamicIdList: string[] = await bot.redis.getSet( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }` );
 	
-	BILIBILI_DYNAMIC_HEADERS.Referer.replace( "$", uid.toString( 10 ) );
+	BILIBILI_DYNAMIC_HEADERS.Referer = BILIBILI_DYNAMIC_HEADERS.Referer.replace( "$", uid.toString( 10 ) );
 	return new Promise( ( resolve ) => {
 		axios.get( API.biliDynamic, {
 			params: {
@@ -142,7 +149,7 @@ export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number
 		return Promise.resolve( JSON.parse( live_info ) );
 	}
 	
-	BILIBILI_DYNAMIC_HEADERS.Referer.replace( "$", uid.toString( 10 ) );
+	BILIBILI_DYNAMIC_HEADERS.Referer = `https://space.bilibili.com/${ uid }`;
 	return new Promise( ( resolve ) => {
 		axios.get( API.biliInfo, {
 			params: {
