@@ -13,6 +13,7 @@ export const DB_KEY = {
 	bili_dynamic_key: 'hot_news.bili_dynamic',
 	// bilibili某UP的直播间信息
 	bili_live_info_key: 'hot_news.bili_live_info',
+	bili_live_status_key: 'hot_news.bili_live_status',
 	// 限制bilibili动态过时的时间
 	limit_bili_dynamic_time_key: "hot_news.limit_bili_dynamic_time",
 	// 图片信息缓存

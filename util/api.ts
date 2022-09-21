@@ -14,6 +14,7 @@ const API = {
 	toutiao: 'https://www.anyknew.com/api/v1/sites/toutiao',
 	biliDynamic: "https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/space",
 	biliInfo: 'https://api.bilibili.com/x/space/acc/info',
+	bili_live_status: 'https://api.live.bilibili.com/room/v1/Room/get_status_info_by_uids',
 	moyu: 'https://api.vvhan.com/api/moyu?type=json',
 	moyu2: 'https://api.j4u.ink/proxy/redirect/moyu/calendar/$.png',
 	"60s": 'https://api.vvhan.com/api/60s?ts=$',
@@ -171,6 +172,63 @@ export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number
 			resolve( info );
 			if ( !no_cache ) {
 				bot.redis.setString( `${ DB_KEY.bili_live_info_key }.${ uid }`, JSON.stringify( info ), cache_time );
+			}
+		} ).catch( ( reason ): any => {
+			if ( axios.isAxiosError( reason ) ) {
+				let err = <AxiosError>reason;
+				bot.logger.error( `获取B站[${ uid }]个人信息失败, reason: ${ err.message }` );
+			} else {
+				bot.logger.error( reason );
+			}
+		} )
+	} );
+}
+
+/**
+ * 获取直播间状态的 API
+ * @param uid
+ * @param no_cache
+ * @param cache_time
+ */
+export const getBiliLiveStatus: ( uid: number, no_cache?: boolean, cache_time?: number ) => Promise<BiliLiveInfo> = async ( uid, no_cache = false, cache_time = 60 ) => {
+	const live_info = await bot.redis.getString( `${ DB_KEY.bili_live_status_key }.${ uid }` );
+	if ( live_info ) {
+		return Promise.resolve( JSON.parse( live_info ) );
+	}
+	
+	return new Promise( ( resolve ) => {
+		axios.get( API.bili_live_status, {
+			params: {
+				"uids[]": uid
+			},
+			headers: BILIBILI_DYNAMIC_HEADERS,
+			timeout: 5000
+		} ).then( r => {
+			if ( r.data.code !== 0 ) {
+				bot.logger.error( `获取B站[${ uid }]个人信息失败,code is [${ r.data.code }], reason: ${ r.data.message || r.data.msg }` );
+				return;
+			}
+			
+			const { title, uname, online, live_status, cover_from_user, room_id, short_id } = r.data.data[uid];
+			const info = {
+				liveRoom: {
+					liveStatus: live_status,
+					roomStatus: 1,
+					title,
+					url: `https://live.bilibili.com/${ short_id === 0 ? room_id : short_id }`,
+					cover: cover_from_user,
+					watched_show: {
+						switch: true,
+						num: online,
+						text_small: "",
+						text_large: ""
+					}
+				},
+				name: uname
+			}
+			resolve( info );
+			if ( !no_cache ) {
+				bot.redis.setString( `${ DB_KEY.bili_live_status_key }.${ uid }`, JSON.stringify( info ), cache_time );
 			}
 		} ).catch( ( reason ): any => {
 			if ( axios.isAxiosError( reason ) ) {

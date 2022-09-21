@@ -2,7 +2,7 @@ import { cancelJob, Job, scheduleJob } from "node-schedule";
 import { randomInt } from "#genshin/utils/random";
 import { CHANNEL_NAME, DB_KEY } from "#hot-news/util/constants";
 import { getHashField } from "#hot-news/util/RedisUtils";
-import { getBiliDynamicNew, getBiliLive } from "#hot-news/util/api";
+import { getBiliDynamicNew, getBiliLiveStatus } from "#hot-news/util/api";
 import { MessageType } from "@modules/message";
 import { BOT } from "@modules/bot";
 import puppeteer from "puppeteer";
@@ -248,7 +248,7 @@ export class ScheduleNews {
 			for ( let uid of uidList ) {
 				const notification_status = await this.bot.redis.getString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }` );
 				if ( !notification_status ) {
-					const live: BiliLiveInfo = await getBiliLive( uid, false, this.config.biliLiveApiCacheTime );
+					const live: BiliLiveInfo = await getBiliLiveStatus( uid, false, this.config.biliLiveApiCacheTime );
 					if ( live && live.liveRoom && live.liveRoom.liveStatus === 1 ) {
 						// noinspection JSUnusedLocalSymbols
 						const {

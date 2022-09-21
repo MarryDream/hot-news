@@ -3,7 +3,7 @@ import { getChatInfo } from "#hot-news/util/tools";
 import { MessageType } from "@modules/message";
 import { getHashField } from "#hot-news/util/RedisUtils";
 import { CHANNEL_NAME, DB_KEY } from "#hot-news/util/constants";
-import { getBiliLive } from "#hot-news/util/api";
+import { getBiliLiveStatus } from "#hot-news/util/api";
 import { config } from "#hot-news/init";
 import { GroupMessageEventData } from "oicq";
 
@@ -38,7 +38,7 @@ export async function main( { sendMessage, messageData, redis }: InputParameter 
 	const uidListStr: string = await getHashField( DB_KEY.notify_bili_ids_key, `${ targetId }` ) || "[]";
 	const uidList: number[] = JSON.parse( uidListStr );
 	for ( let uid of uidList ) {
-		const info = await getBiliLive( uid, true );
+		const info = await getBiliLiveStatus( uid, true );
 		upNames.push( `\n\t- ${ uid }(${ info.name })` );
 	}
 	

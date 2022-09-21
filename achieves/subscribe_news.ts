@@ -1,6 +1,6 @@
 import { InputParameter } from "@modules/command";
 import { MessageType } from "@modules/message";
-import { getBiliLive } from "#hot-news/util/api";
+import { getBiliLiveStatus } from "#hot-news/util/api";
 import { getChannelKey, getChatInfo } from "#hot-news/util/tools";
 import { CHANNEL_NAME, DB_KEY } from "#hot-news/util/constants";
 import { getHashField } from "#hot-news/util/RedisUtils";
@@ -78,7 +78,7 @@ export async function main( { sendMessage, messageData, redis, logger }: InputPa
 		// 处理B站UP主订阅
 		let upName = "";
 		try {
-			const info = await getBiliLive( channelKey, true );
+			const info = await getBiliLiveStatus( channelKey, true );
 			if ( !info ) {
 				await sendMessage( `[${ channel }]不是一个可用的 uid`, true );
 			}
