@@ -137,7 +137,7 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 				let err = <AxiosError>reason;
 				bot.logger.error( `获取B站[${ uid }]动态失败, reason: ${ err.message }` );
 			} else {
-				bot.logger.error( reason );
+				bot.logger.error( `获取B站[${ uid }]动态失败, reason:`, reason );
 			}
 			resolve( [] )
 		} )
@@ -178,7 +178,7 @@ export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number
 				let err = <AxiosError>reason;
 				bot.logger.error( `获取B站[${ uid }]个人信息失败, reason: ${ err.message }` );
 			} else {
-				bot.logger.error( reason );
+				bot.logger.error( `获取B站[${ uid }]个人信息失败, reason:`, reason );
 			}
 		} )
 	} );
@@ -205,7 +205,7 @@ export const getBiliLiveStatus: ( uid: number, no_cache?: boolean, cache_time?: 
 			timeout: 5000
 		} ).then( r => {
 			if ( r.data.code !== 0 ) {
-				bot.logger.error( `获取B站[${ uid }]个人信息失败,code is [${ r.data.code }], reason: ${ r.data.message || r.data.msg }` );
+				bot.logger.error( `获取B站[${ uid }]直播间状态失败,code is [${ r.data.code }], reason: ${ r.data.message || r.data.msg }` );
 				return;
 			}
 			
@@ -233,9 +233,9 @@ export const getBiliLiveStatus: ( uid: number, no_cache?: boolean, cache_time?: 
 		} ).catch( ( reason ): any => {
 			if ( axios.isAxiosError( reason ) ) {
 				let err = <AxiosError>reason;
-				bot.logger.error( `获取B站[${ uid }]个人信息失败, reason: ${ err.message }` );
+				bot.logger.error( `获取B站[${ uid }]直播间状态失败, reason: ${ err.message }` );
 			} else {
-				bot.logger.error( reason );
+				bot.logger.error( `获取B站[${ uid }]直播间状态失败, reason:`, reason );
 			}
 		} )
 	} );
@@ -271,7 +271,7 @@ export async function getMoyuImg(): Promise<string> {
 				let err = <AxiosError>reason;
 				bot.logger.error( `获取摸鱼日报失败, reason: ${ err.message }` );
 			} else {
-				bot.logger.error( reason );
+				bot.logger.error( "获取摸鱼日报失败, reason:", reason );
 			}
 		} )
 	} );
