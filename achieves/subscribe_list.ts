@@ -38,8 +38,12 @@ export async function main( { sendMessage, messageData, redis }: InputParameter 
 	const uidListStr: string = await getHashField( DB_KEY.notify_bili_ids_key, `${ targetId }` ) || "[]";
 	const uidList: number[] = JSON.parse( uidListStr );
 	for ( let uid of uidList ) {
-		const info = await getBiliLiveStatus( uid, true );
-		upNames.push( `\n\t- ${ uid }(${ info.name })` );
+		try {
+			const info = await getBiliLiveStatus( uid, true );
+			upNames.push( `\n\t- ${ uid }${ info?.name ? `(${ info.name })` : "" }` );
+		} catch ( e ) {
+			upNames.push( `\n\t- ${ uid }` );
+		}
 	}
 	
 	let msg: string = `[${ targetId }]的订阅信息:\n消息服务: ${ existNews ? `[${ map.join( "," ) }]` : "未订阅消息服务" }\nB站UP: ${ existBili ? `${ upNames.join( " " ) }\n您还可以订阅${ config.maxSubscribeNum - upNames.length }位UP主.` : "未订阅B站UP" }`;
