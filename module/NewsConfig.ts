@@ -1,4 +1,5 @@
 import { RefreshCatch } from "@modules/management/refresh";
+import { PluginAlias } from "@modules/plugin";
 
 export default class NewsConfig {
 	/** 用户的最大订阅数量 */
@@ -63,8 +64,11 @@ export default class NewsConfig {
 			limitTimes: 3,
 			limitTime: 1
 		},
-		vvhanCdn: ""
+		vvhanCdn: "",
+		aliases: [ "消息订阅", "新闻订阅", "热点新闻" ]
 	};
+	/** 更新使用的别名 */
+	public aliases: string[];
 	
 	constructor( config: any ) {
 		this.maxSubscribeNum = config.maxSubscribeNum;
@@ -90,6 +94,7 @@ export default class NewsConfig {
 			limitTime: config.pushLimit.limitTime,
 		};
 		this.vvhanCdn = config.vvhanCdn;
+		this.aliases = config.aliases;
 	}
 	
 	public async refresh( config ): Promise<string> {
@@ -117,6 +122,13 @@ export default class NewsConfig {
 				limitTime: config.pushLimit.limitTime,
 			};
 			this.vvhanCdn = config.vvhanCdn;
+			for ( let alias of this.aliases ) {
+				delete PluginAlias[alias];
+			}
+			this.aliases = config.aliases;
+			for ( let alias of this.aliases ) {
+				PluginAlias[alias] = "hot-news";
+			}
 			return "hot_news.yml 重新加载完毕";
 		} catch ( error ) {
 			throw <RefreshCatch>{
