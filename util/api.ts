@@ -180,6 +180,23 @@ export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number
 			} else {
 				bot.logger.error( `获取B站[${ uid }]个人信息失败, reason:`, reason );
 			}
+			const info = {
+				liveRoom: {
+					liveStatus: -1,
+					roomStatus: 1,
+					title: "",
+					url: `https://live.bilibili.com/`,
+					cover: "",
+					watched_show: {
+						switch: true,
+						num: 0,
+						text_small: "",
+						text_large: ""
+					}
+				},
+				name: uid.toString( 10 )
+			}
+			resolve( info );
 		} )
 	} );
 }
@@ -239,7 +256,7 @@ export const getBiliLiveStatus: ( uid: number, no_cache?: boolean, cache_time?: 
 			}
 			const info = {
 				liveRoom: {
-					liveStatus: 0,
+					liveStatus: -1,
 					roomStatus: 1,
 					title: "",
 					url: `https://live.bilibili.com/`,

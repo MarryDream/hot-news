@@ -249,7 +249,7 @@ export class ScheduleNews {
 				const notification_status = await this.bot.redis.getString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }` );
 				if ( !notification_status ) {
 					const live: BiliLiveInfo = await getBiliLiveStatus( uid, false, this.config.biliLiveApiCacheTime );
-					if ( live && live.liveRoom && live.liveRoom.liveStatus === 1 ) {
+					if ( live?.liveRoom?.liveStatus === 1 ) {
 						// noinspection JSUnusedLocalSymbols
 						const {
 							name: up_name,
@@ -263,6 +263,8 @@ export class ScheduleNews {
 						await this.sendMsg( chatInfo.type, chatInfo.targetId, msg );
 						await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }`, "1", cacheTime );
 						i++;
+					} else if ( live?.liveRoom?.liveStatus === 0 ) {
+						await this.bot.redis.deleteKey( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }` );
 					}
 				}
 				if ( this.config.pushLimit.enable && i > this.config.pushLimit.limitTimes ) {
