@@ -226,6 +226,27 @@ export const getBiliLiveStatus: ( uid: number, no_cache?: boolean, cache_time?: 
 				return;
 			}
 			
+			if ( Array.isArray( r.data.data ) ) {
+				const info = {
+					liveRoom: {
+						liveStatus: -1,
+						roomStatus: 1,
+						title: "",
+						url: `https://live.bilibili.com/`,
+						cover: "",
+						watched_show: {
+							switch: true,
+							num: 0,
+							text_small: "",
+							text_large: ""
+						}
+					},
+					name: uid.toString( 10 )
+				}
+				resolve( info );
+				return;
+			}
+			
 			const { title, uname, online, live_status, cover_from_user, room_id, short_id } = r.data.data[uid];
 			const info = {
 				liveRoom: {
