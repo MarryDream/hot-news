@@ -356,7 +356,7 @@ export async function get60s(): Promise<string> {
 	}
 	
 	return new Promise( resolve => {
-		axios.get( api, { params: { type: 'json' }, timeout: 5000, headers } )
+		axios.get( api, { params: { type: 'json' }, timeout: 10000, headers } )
 			.then( response => {
 				if ( response.data.success ) {
 					const imgUrl = response.data.imgUrl;
