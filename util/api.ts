@@ -5,6 +5,7 @@ import { DB_KEY } from "#hot-news/util/constants";
 import { BiliDynamicCard, BiliLiveInfo, News } from "#hot-news/types/type";
 import moment from "moment";
 import { config } from "#hot-news/init";
+import { reject } from "lodash";
 
 const API = {
 	sina: 'https://www.anyknew.com/api/v1/sites/sina',
@@ -17,7 +18,7 @@ const API = {
 	bili_live_status: 'https://api.live.bilibili.com/room/v1/Room/get_status_info_by_uids',
 	moyu: 'https://api.vvhan.com/api/moyu?type=json',
 	moyu2: 'https://api.j4u.ink/proxy/redirect/moyu/calendar/$.png',
-	"60s": 'https://api.vvhan.com/api/60s?ts=$',
+	"60s": 'https://api.vvhan.com/api/60s',
 }
 
 const NEWS_HEADERS = {
@@ -337,11 +338,40 @@ export function getMoyuUrl(): string {
 	return API.moyu2.replace( "$", today );
 }
 
-export function get60s(): string {
+export async function get60s(): Promise<string> {
 	const today: string = formatDate( new Date(), "" );
 	let api = API["60s"].replace( "$", today );
-	if ( config.vvhanCdn ) {
-		api = api.replace( "https://api.vvhan.com", config.vvhanCdn );
+	if ( !config.vvhanCdn ) {
+		return Promise.resolve( `${ API['60s'] }?ts=${ today }` );
 	}
-	return api;
+	api = api.replace( "https://api.vvhan.com", config.vvhanCdn );
+	let key = `${ DB_KEY["60s_img_url_key"] }.${ today }`;
+	const url = await bot.redis.getString( key );
+	if ( url ) {
+		return url;
+	}
+	
+	const headers = {
+		"Referer": "https://hibennett.cn/?bot=SilveryStar/Adachi-BOT&plugin=hot-news&version=v1"
+	}
+	
+	return new Promise( resolve => {
+		axios.get( api, { params: { type: 'json' }, timeout: 5000, headers } )
+			.then( response => {
+				if ( response.data.success ) {
+					const imgUrl = response.data.imgUrl;
+					resolve( imgUrl );
+					bot.redis.setString( key, imgUrl, 3600 );
+				}
+			} ).catch( ( reason ): any => {
+			if ( axios.isAxiosError( reason ) ) {
+				let err = <AxiosError>reason;
+				bot.logger.error( `获取60秒新闻图失败, reason: ${ err.message }` );
+				reject( err.message );
+			} else {
+				bot.logger.error( "获取60s新闻图失败, reason:", reason );
+				reject( reason );
+			}
+		} )
+	} );
 }

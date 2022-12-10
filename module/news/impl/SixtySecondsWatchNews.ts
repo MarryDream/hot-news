@@ -14,9 +14,8 @@ import { get60s } from "#hot-news/util/api";
  */
 export class SixtySecondsWatchNews implements NewsService {
 	async getInfo( channel?: string ): Promise<string> {
-		const api = get60s();
-		const headers = { Referer: "https://hibennett.cn/?bot=SilveryStar/Adachi-BOT&plugin=hot-news&version=v1" };
-		const message = cqcode.image( api, true, 10000, JSON.stringify( headers ) );
+		const api = await get60s();
+		const message = cqcode.image( api, true, 10000 );
 		bot.logger.debug( message );
 		return message;
 	}
@@ -27,7 +26,13 @@ export class SixtySecondsWatchNews implements NewsService {
 			return;
 		}
 		
-		const msg = await this.getInfo();
+		let msg: string = "";
+		try {
+			msg = await this.getInfo();
+		} catch ( e ) {
+			return;
+		}
+		
 		let i = 0;
 		for ( let id of set ) {
 			const { type, targetId }: ChatInfo = JSON.parse( id );

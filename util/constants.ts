@@ -22,6 +22,7 @@ export const DB_KEY = {
 	notify_bili_ids_key: 'hot_news.notify_bili_ids',
 	// 摸鱼日报图的URL缓存
 	moyu_img_url_key: 'hot_news.moyu_img_url',
+	'60s_img_url_key': 'hot_news.60s_img_url',
 }
 
 export const CHANNEL_NAME = {
