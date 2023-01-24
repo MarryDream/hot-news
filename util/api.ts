@@ -122,6 +122,12 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 			let filter_items = items.filter( c => !dynamicIdList.includes( c.id_str )
 				&& c.visible
 				&& !reg.test( c.modules.module_dynamic.desc?.text || "" ) );
+			
+			// 把开奖消息ID保存，避免后续查询因为触发反爬虫导致又被推送
+			items.filter( c => !dynamicIdList.includes( c.id_str ) && c.visible && reg.test( c.modules.module_dynamic.desc?.text || "" ) ).forEach( value => {
+				bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, value.id_str );
+			} );
+			
 			if ( filter_items.length > 0 ) {
 				resolve( filter_items );
 				if ( !no_cache ) {

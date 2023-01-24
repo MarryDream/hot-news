@@ -209,6 +209,10 @@ export class ScheduleNews {
 					await this.normalDynamicHandle( dynamicInfo, chatInfo );
 					i++;
 				} else {
+					// debug
+					if ( card.id_str && card.modules.module_dynamic.desc?.text === undefined ) {
+						this.bot.logger.debug( `[hot-news]--获取到B站[${ name }]-[${ pub_tss }]发布的新动态--[${ card.id_str }]--${ card }` );
+					}
 					this.bot.logger.info( `[hot-news]--获取到B站[${ name }]-[${ pub_tss }]发布的新动态--[${ card.id_str }]--[${ card.modules.module_dynamic.desc?.text }]` );
 					const dynamicInfo: DynamicInfo = {
 						id: card.id_str,
