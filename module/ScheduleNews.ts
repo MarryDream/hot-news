@@ -260,7 +260,7 @@ export class ScheduleNews {
 							liveRoom: { title, url, cover, watched_show: { num, text_large, text_small } }
 						} = live;
 						const cacheTime: number = this.config.biliLiveCacheTime * 60 * 60;
-						const image: ImgPttElem = segment.image( cover, true, 5000 );
+						const image: ImgPttElem = segment.image( cover, true, 60 );
 						// noinspection JSUnusedLocalSymbols
 						const img: string = segment.toCqcode( image );
 						let msg = eval( this.config.liveTemplate );
@@ -292,7 +292,7 @@ export class ScheduleNews {
 		} = <BiliDynamicMajorArticle>card.modules.module_dynamic.major;
 		// noinspection JSUnusedLocalSymbols
 		const cover_list = covers.map( ( l: string ) => {
-			const image: ImgPttElem = segment.image( l, true, 5000 );
+			const image: ImgPttElem = segment.image( l, true, 60 );
 			return segment.toCqcode( image );
 		} );
 		// noinspection JSUnusedLocalSymbols
@@ -379,7 +379,7 @@ export class ScheduleNews {
 			const img = ScheduleNews.asCqCode( res.data );
 			// 如果是视频投稿，那么把cover设置为它对应的cqcode
 			if ( archive ) {
-				const image: ImgPttElem = segment.image( archive.cover, true, 5000 );
+				const image: ImgPttElem = segment.image( archive.cover, true, 60 );
 				archive.cover = segment.toCqcode( image );
 				archive.jump_url = "https:" + archive.jump_url;
 				msg = eval( this.config.videoDynamicTemplate );

@@ -20,7 +20,7 @@ export class MessAroundServiceImpl implements NewsService {
 		}
 		
 		if ( url ) {
-			const img = segment.image( url, true, 5000 );
+			const img = segment.image( url, true, 60 );
 			return segment.toCqcode( img );
 		}
 		return '未获取到摸鱼日报';

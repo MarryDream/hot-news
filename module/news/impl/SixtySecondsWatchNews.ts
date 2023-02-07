@@ -15,7 +15,7 @@ import { get60s } from "#hot-news/util/api";
 export class SixtySecondsWatchNews implements NewsService {
 	async getInfo( channel?: string ): Promise<string> {
 		const api = await get60s();
-		const message = cqcode.image( api, true, 10000 );
+		const message = cqcode.image( api, true, 60 );
 		bot.logger.debug( message );
 		return message;
 	}
