@@ -59,3 +59,11 @@ export const getChannelKey: ( channel: string ) => ( string | number | null ) = 
 export async function wait( ms: number ): Promise<void> {
 	return new Promise( resolve => setTimeout( resolve, ms ) );
 }
+
+export function msToHumanize( ms: number ): string {
+	ms = ms / 1000 | 0;
+	const hour = Math.floor( ms / 3600 );
+	const minute = Math.floor( ( ms - hour * 3600 ) / 60 );
+	const second = ms % 60;
+	return `${ hour }:${ minute }:${ second }`;
+}

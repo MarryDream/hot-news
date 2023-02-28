@@ -176,6 +176,7 @@ export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number
 			
 			const { name, live_room } = r.data.data;
 			const info = { name, liveRoom: live_room };
+			info.liveRoom.live_time = -1;
 			resolve( info );
 			if ( !no_cache ) {
 				bot.redis.setString( `${ DB_KEY.bili_live_info_key }.${ uid }`, JSON.stringify( info ), cache_time );
@@ -194,6 +195,7 @@ export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number
 					title: "",
 					url: `https://live.bilibili.com/`,
 					cover: "",
+					live_time: -1,
 					watched_show: {
 						switch: true,
 						num: 0,
@@ -241,6 +243,7 @@ export const getBiliLiveStatus: ( uid: number, no_cache?: boolean, cache_time?: 
 						title: "",
 						url: `https://live.bilibili.com/`,
 						cover: "",
+						live_time: -1,
 						watched_show: {
 							switch: true,
 							num: 0,
@@ -254,7 +257,16 @@ export const getBiliLiveStatus: ( uid: number, no_cache?: boolean, cache_time?: 
 				return;
 			}
 			
-			const { title, uname, online, live_status, cover_from_user, room_id, short_id } = r.data.data[uid];
+			const {
+				title,
+				uname,
+				online,
+				live_status,
+				live_time,
+				cover_from_user,
+				room_id,
+				short_id
+			} = r.data.data[uid];
 			const info = {
 				liveRoom: {
 					liveStatus: live_status,
@@ -262,6 +274,7 @@ export const getBiliLiveStatus: ( uid: number, no_cache?: boolean, cache_time?: 
 					title,
 					url: `https://live.bilibili.com/${ short_id === 0 ? room_id : short_id }`,
 					cover: cover_from_user,
+					live_time,
 					watched_show: {
 						switch: true,
 						num: online,
@@ -289,6 +302,7 @@ export const getBiliLiveStatus: ( uid: number, no_cache?: boolean, cache_time?: 
 					title: "",
 					url: `https://live.bilibili.com/`,
 					cover: "",
+					live_time: -1,
 					watched_show: {
 						switch: true,
 						num: 0,

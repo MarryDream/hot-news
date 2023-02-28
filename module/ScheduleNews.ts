@@ -17,7 +17,7 @@ import {
 	DynamicInfo
 } from "#hot-news/types/type";
 import NewsConfig from "#hot-news/module/NewsConfig";
-import { formatTimestamp, wait } from "#hot-news/util/tools";
+import { formatTimestamp, msToHumanize, wait } from "#hot-news/util/tools";
 import { Order } from "@modules/command";
 import { AuthLevel } from "@modules/management/auth";
 import { ScreenshotService } from "#hot-news/module/screenshot/ScreenshotService";
@@ -257,8 +257,10 @@ export class ScheduleNews {
 						// noinspection JSUnusedLocalSymbols
 						const {
 							name: up_name,
-							liveRoom: { title, url, cover, watched_show: { num, text_large, text_small } }
+							liveRoom: { title, url, cover, watched_show: { num, text_large, text_small }, live_time }
 						} = live;
+						// noinspection JSUnusedLocalSymbols
+						const liveTime: string = live_time === -1 ? "0小时" : msToHumanize( Date.now() - live_time * 1000 );
 						const cacheTime: number = this.config.biliLiveCacheTime * 60 * 60;
 						const image: ImgPttElem = segment.image( cover, true, 60 );
 						// noinspection JSUnusedLocalSymbols
@@ -269,6 +271,8 @@ export class ScheduleNews {
 						i++;
 					} else if ( live?.liveRoom?.liveStatus === 0 ) {
 						await this.bot.redis.deleteKey( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }` );
+						const liveTime: string = live.liveRoom.live_time === -1 ? "00:00:00" : msToHumanize( Date.now() - live.liveRoom.live_time * 1000 );
+						this.bot.logger.info( `[hot-news] UID:${ uid }(${ live.name })的直播结束了，本次直播时长: ${ liveTime }` );
 					}
 				}
 				if ( this.config.pushLimit.enable && i > this.config.pushLimit.limitTimes ) {

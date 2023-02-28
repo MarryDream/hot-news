@@ -199,6 +199,8 @@ export interface BiliLiveInfo {
 		title: string;
 		url: string;
 		cover: string;
+		// 直播开始的时间戳（秒）
+		live_time: number;
 		watched_show: {
 			switch: boolean;
 			num: number;// 直播间人气值
