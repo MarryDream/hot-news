@@ -251,29 +251,27 @@ export class ScheduleNews {
 			let i = 0;
 			for ( let uid of uidList ) {
 				const notification_status = await this.bot.redis.getString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }` );
-				if ( !notification_status ) {
-					const live: BiliLiveInfo = await getBiliLiveStatus( uid, false, this.config.biliLiveApiCacheTime );
-					if ( live?.liveRoom?.liveStatus === 1 ) {
-						// noinspection JSUnusedLocalSymbols
-						const {
-							name: up_name,
-							liveRoom: { title, url, cover, watched_show: { num, text_large, text_small }, live_time }
-						} = live;
-						// noinspection JSUnusedLocalSymbols
-						const liveTime: string = live_time === -1 ? "0小时" : msToHumanize( Date.now() - live_time * 1000 );
-						const cacheTime: number = this.config.biliLiveCacheTime * 60 * 60;
-						const image: ImgPttElem = segment.image( cover, true, 60 );
-						// noinspection JSUnusedLocalSymbols
-						const img: string = segment.toCqcode( image );
-						let msg = eval( this.config.liveTemplate );
-						await this.sendMsg( chatInfo.type, chatInfo.targetId, msg );
-						await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }`, "1", cacheTime );
-						i++;
-					} else if ( live?.liveRoom?.liveStatus === 0 ) {
-						await this.bot.redis.deleteKey( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }` );
-						const liveTime: string = live.liveRoom.live_time === -1 ? "00:00:00" : msToHumanize( Date.now() - live.liveRoom.live_time * 1000 );
-						this.bot.logger.info( `[hot-news] UID:${ uid }(${ live.name })的直播结束了，本次直播时长: ${ liveTime }` );
-					}
+				const live: BiliLiveInfo = await getBiliLiveStatus( uid, false, this.config.biliLiveApiCacheTime );
+				if ( !notification_status && live?.liveRoom?.liveStatus === 1 ) {
+					// noinspection JSUnusedLocalSymbols
+					const {
+						name: up_name,
+						liveRoom: { title, url, cover, watched_show: { num, text_large, text_small }, live_time }
+					} = live;
+					// noinspection JSUnusedLocalSymbols
+					const liveTime: string = live_time === -1 ? "00:00:00" : msToHumanize( Date.now() - live_time * 1000 );
+					const cacheTime: number = this.config.biliLiveCacheTime * 60 * 60;
+					const image: ImgPttElem = segment.image( cover, true, 60 );
+					// noinspection JSUnusedLocalSymbols
+					const img: string = segment.toCqcode( image );
+					let msg = eval( this.config.liveTemplate );
+					await this.sendMsg( chatInfo.type, chatInfo.targetId, msg );
+					await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }`, "1", cacheTime );
+					i++;
+				} else if ( notification_status && live?.liveRoom?.liveStatus === 0 ) {
+					await this.bot.redis.deleteKey( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }` );
+					const liveTime: string = live.liveRoom.live_time === -1 ? "00:00:00" : msToHumanize( Date.now() - live.liveRoom.live_time * 1000 );
+					this.bot.logger.info( `[hot-news] UID:${ uid }(${ live.name })的直播结束了，本次直播时长: ${ liveTime }` );
 				}
 				if ( this.config.pushLimit.enable && i > this.config.pushLimit.limitTimes ) {
 					await wait( this.config.pushLimit.limitTime * 1000 );
