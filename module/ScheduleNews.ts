@@ -268,7 +268,7 @@ export class ScheduleNews {
 					await this.sendMsg( chatInfo.type, chatInfo.targetId, msg );
 					await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }`, "1", cacheTime );
 					i++;
-				} else if ( notification_status && live?.liveRoom?.liveStatus === 0 ) {
+				} else if ( notification_status && ( live?.liveRoom?.liveStatus === 0 || live.liveRoom?.liveStatus === 2 ) ) {
 					await this.bot.redis.deleteKey( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }` );
 					const liveTime: string = live.liveRoom.live_time === -1 ? "00:00:00" : msToHumanize( Date.now() - live.liveRoom.live_time * 1000 );
 					this.bot.logger.info( `[hot-news] UID:${ uid }(${ live.name })的直播结束了，本次直播时长: ${ liveTime }` );

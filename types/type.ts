@@ -194,6 +194,7 @@ export interface BiliDynamicMajorLive {
  */
 export interface BiliLiveInfo {
 	liveRoom: {
+		// 0: 未开播，1: 正在直播，2: 轮播中
 		liveStatus: number;
 		roomStatus: number;
 		title: string;
