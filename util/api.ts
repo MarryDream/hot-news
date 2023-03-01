@@ -176,7 +176,7 @@ export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number
 			
 			const { name, live_room } = r.data.data;
 			const info = { name, liveRoom: live_room };
-			info.liveRoom.live_time = -1;
+			info.liveRoom.live_time = 0;
 			resolve( info );
 			if ( !no_cache ) {
 				bot.redis.setString( `${ DB_KEY.bili_live_info_key }.${ uid }`, JSON.stringify( info ), cache_time );
@@ -195,7 +195,7 @@ export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number
 					title: "",
 					url: `https://live.bilibili.com/`,
 					cover: "",
-					live_time: -1,
+					live_time: 0,
 					watched_show: {
 						switch: true,
 						num: 0,
@@ -243,7 +243,7 @@ export const getBiliLiveStatus: ( uid: number, no_cache?: boolean, cache_time?: 
 						title: "",
 						url: `https://live.bilibili.com/`,
 						cover: "",
-						live_time: -1,
+						live_time: 0,
 						watched_show: {
 							switch: true,
 							num: 0,
@@ -302,7 +302,7 @@ export const getBiliLiveStatus: ( uid: number, no_cache?: boolean, cache_time?: 
 					title: "",
 					url: `https://live.bilibili.com/`,
 					cover: "",
-					live_time: -1,
+					live_time: 0,
 					watched_show: {
 						switch: true,
 						num: 0,

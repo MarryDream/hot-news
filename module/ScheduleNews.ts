@@ -172,26 +172,7 @@ export class ScheduleNews {
 					await this.articleHandle( card, chatInfo );
 					i++;
 				} else if ( card.type === 'DYNAMIC_TYPE_LIVE_RCMD' ) {
-					// 直播动态处理完后直接返回，不需要后续再查询
-					this.bot.logger.info( `[hot-news]--获取到B站${ name }-[${ pub_tss }]发布的新动态[${ card.modules.module_dynamic.desc?.text || "直播推送" }]` );
-					const notification_status = await this.bot.redis.getString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }` );
-					if ( !notification_status ) {
-						const dynamicInfo: DynamicInfo = {
-							id: card.id_str,
-							name,
-							uid,
-							pub_time,
-							pub_tss,
-							like_num,
-							comment_num,
-							forward_num
-						};
-						await this.normalDynamicHandle( dynamicInfo, chatInfo );
-						await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }`, "1", this.config.biliLiveCacheTime * 60 * 60 );
-						i++;
-					} else {
-						this.bot.logger.info( `[hot-news]--[${ name }]的直播开播消息已推送过了，该直播动态不再推送！` )
-					}
+					// do nothing
 				} else if ( card.type === "DYNAMIC_TYPE_AV" ) {
 					this.bot.logger.info( `[hot-news]--获取到B站[${ name }]-[${ pub_tss }]发布的新动态--[${ card.id_str }]--[${ card.modules.module_dynamic.desc?.text || "投稿视频" }]` );
 					const { archive } = <BiliDynamicMajorArchive>card.modules.module_dynamic.major;
@@ -259,18 +240,20 @@ export class ScheduleNews {
 						liveRoom: { title, url, cover, watched_show: { num, text_large, text_small }, live_time }
 					} = live;
 					// noinspection JSUnusedLocalSymbols
-					const liveTime: string = live_time === -1 ? "00:00:00" : msToHumanize( Date.now() - live_time * 1000 );
+					const liveTime: string = live_time === 0 ? "00:00:00" : msToHumanize( Date.now() - live_time * 1000 );
 					const cacheTime: number = this.config.biliLiveCacheTime * 60 * 60;
 					const image: ImgPttElem = segment.image( cover, true, 60 );
 					// noinspection JSUnusedLocalSymbols
 					const img: string = segment.toCqcode( image );
 					let msg = eval( this.config.liveTemplate );
 					await this.sendMsg( chatInfo.type, chatInfo.targetId, msg );
-					await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }`, "1", cacheTime );
+					await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }`, JSON.stringify( live ), cacheTime );
 					i++;
 				} else if ( notification_status && ( live?.liveRoom?.liveStatus === 0 || live.liveRoom?.liveStatus === 2 ) ) {
+					const cache_live: BiliLiveInfo = JSON.parse( notification_status );
+					const live_time: number = cache_live?.liveRoom?.live_time || 0;
 					await this.bot.redis.deleteKey( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }` );
-					const liveTime: string = live.liveRoom.live_time === -1 ? "00:00:00" : msToHumanize( Date.now() - live.liveRoom.live_time * 1000 );
+					const liveTime: string = live_time === 0 ? "00:00:00" : msToHumanize( Date.now() - live_time * 1000 );
 					this.bot.logger.info( `[hot-news] UID:${ uid }(${ live.name })的直播结束了，本次直播时长: ${ liveTime }` );
 				}
 				if ( this.config.pushLimit.enable && i > this.config.pushLimit.limitTimes ) {
