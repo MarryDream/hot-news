@@ -1,5 +1,5 @@
 import { NewsService } from "#hot-news/module/news/NewsService";
-import { cqcode } from "oicq";
+import { segment, Sendable } from "icqq";
 import { wait } from "#hot-news/util/tools";
 import { config } from "#hot-news/init";
 import bot from "ROOT";
@@ -13,11 +13,9 @@ import { get60s } from "#hot-news/util/api";
  * 60s看到世界新闻，返回一张图片
  */
 export class SixtySecondsWatchNews implements NewsService {
-	async getInfo( channel?: string ): Promise<string> {
+	async getInfo( channel?: string ): Promise<Sendable> {
 		const api = await get60s();
-		const message = cqcode.image( api, true, 60 );
-		bot.logger.debug( message );
-		return message;
+		return segment.image( api, true, 60 );
 	}
 	
 	async handler(): Promise<void> {
@@ -26,10 +24,11 @@ export class SixtySecondsWatchNews implements NewsService {
 			return;
 		}
 		
-		let msg: string = "";
+		let msg: Sendable = "";
 		try {
 			msg = await this.getInfo();
 		} catch ( e ) {
+			bot.logger.info( `[hot-news] 获取60s新闻图error.`, e );
 			return;
 		}
 		

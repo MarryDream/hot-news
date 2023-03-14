@@ -7,13 +7,14 @@ import bot from "ROOT";
 import { MessageMethod } from "#hot-news/module/message/MessageMethod";
 import { config } from "#hot-news/init";
 import { wait } from "#hot-news/util/tools";
+import { Sendable } from "icqq";
 
 /**
  * 热点新闻服务
  */
 export class HotNewsServiceImpl implements NewsService {
 	
-	getInfo( channel?: string ): Promise<string> {
+	getInfo( channel?: string ): Promise<Sendable> {
 		if ( channel ) {
 			return getNews( `${ channel }` );
 		}

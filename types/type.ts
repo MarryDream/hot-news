@@ -1,4 +1,5 @@
 import { MessageType } from "@modules/message";
+import { ImageElem } from "icqq";
 
 /**
  * @interface
@@ -121,7 +122,7 @@ export interface BiliDynamicMajorArchiveInfo {
 		text: string
 	};
 	bvid: string;
-	cover: string;
+	cover: string | ImageElem;
 	desc: string;
 	disable_preview: boolean;
 	duration_text: string;

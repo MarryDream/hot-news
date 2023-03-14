@@ -1,5 +1,5 @@
 import { NewsService } from "#hot-news/module/news/NewsService";
-import { segment } from "oicq"
+import { segment, Sendable } from "icqq"
 import bot from "ROOT";
 import { DB_KEY } from "#hot-news/util/constants";
 import { ChatInfo } from "#hot-news/types/type";
@@ -11,7 +11,7 @@ import { wait } from "#hot-news/util/tools";
 
 export class MessAroundServiceImpl implements NewsService {
 	
-	async getInfo( channel?: string ): Promise<string> {
+	async getInfo( channel?: string ): Promise<Sendable> {
 		let url;
 		if ( config.subscribeMoyu.apiType === 1 ) {
 			url = await getMoyuImg();
@@ -20,8 +20,7 @@ export class MessAroundServiceImpl implements NewsService {
 		}
 		
 		if ( url ) {
-			const img = segment.image( url, true, 60 );
-			return segment.toCqcode( img );
+			return segment.image( url, true, 60 );
 		}
 		return '未获取到摸鱼日报';
 	}

@@ -2,12 +2,12 @@ import { InputParameter } from "@modules/command";
 import { getChatInfo } from "#hot-news/util/tools";
 import { MessageType } from "@modules/message";
 import { DB_KEY } from "#hot-news/util/constants";
-import { GroupMessageEventData } from "oicq";
+import { GroupMessageEvent } from "icqq";
 
 export async function main( { sendMessage, messageData, redis }: InputParameter ): Promise<void> {
 	const { type, targetId } = getChatInfo( messageData );
 	if ( type === MessageType.Group ) {
-		const groupMsg = <GroupMessageEventData>messageData;
+		const groupMsg = <GroupMessageEvent>messageData;
 		if ( groupMsg.sender.role === 'member' ) {
 			await sendMessage( '您不是本群管理不能使用该指令', true );
 			return;

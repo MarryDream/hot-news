@@ -2,7 +2,7 @@ import bot from "ROOT";
 import { MessageType } from "@modules/message";
 import { Order } from "@modules/command";
 import { AuthLevel } from "@modules/management/auth";
-import { Sendable } from "oicq";
+import { Sendable } from "icqq";
 
 export class MessageMethod {
 	static async sendMsg( type: number, targetId: number, msg: Sendable ) {

@@ -9,7 +9,7 @@ import { ScheduleNews } from "#hot-news/module/ScheduleNews";
 import NewsConfig from "#hot-news/module/NewsConfig";
 import FileManagement from "@modules/file";
 import { ChatInfo } from "#hot-news/types/type";
-import { MemberDecreaseEventData } from "oicq";
+import { MemberDecreaseEvent } from "icqq";
 
 const subscribe_news: OrderConfig = {
 	type: "order",
@@ -89,7 +89,7 @@ export async function clearSubscribe( targetId: number, messageType: MessageType
 		await redis.delSetMember( DB_KEY.sub_bili_ids_key, member );
 		await redis.delHash( DB_KEY.notify_bili_ids_key, `${ targetId }` );
 		await redis.deleteKey( `${ DB_KEY.limit_bili_dynamic_time_key }.${ targetId }` );
-		await logger.info( `--[hot-news]--已为[${ targetId }]取消订阅BiliBili动态` );
+		await logger.info( ` [hot-news] 已为[${ targetId }]取消订阅BiliBili动态` );
 	}
 	
 	// 处理新闻订阅
@@ -97,7 +97,7 @@ export async function clearSubscribe( targetId: number, messageType: MessageType
 	if ( existNotify ) {
 		await redis.delSetMember( DB_KEY.ids, member );
 		await redis.delHash( DB_KEY.channel, `${ targetId }` );
-		await logger.info( `--[hot-news]--已为[${ targetId }]已取消订阅新闻服务` );
+		await logger.info( ` [hot-news] 已为[${ targetId }]已取消订阅新闻服务` );
 	}
 }
 
@@ -105,33 +105,6 @@ export async function clearSubscribe( targetId: number, messageType: MessageType
 async function decreaseFriend( userId: number, bot: BOT ): Promise<void> {
 	if ( bot.config.addFriend ) {
 		await clearSubscribe( userId, MessageType.Private, bot );
-	}
-}
-
-/**
- * 由于redis的key发生变化，用此函数清除过期的数据，并将已有的数据放到新的key中
- */
-const clearDeprecatedData = async ( { redis }: BOT ) => {
-	const subs: string[] = await redis.getSet( "hot_news.sub_genshin_ids" );
-	if ( subs.length > 0 ) {
-		await redis.addSetMember( DB_KEY.sub_bili_ids_key, ...subs );
-		let obj: any = Object.create( null );
-		for ( let sub of subs ) {
-			// 把原有的订阅数据初始化进去
-			const chatInfo: ChatInfo = JSON.parse( sub );
-			obj[`${ chatInfo.targetId }`] = JSON.stringify( [ 401742377 ] );
-		}
-		await redis.setHash( DB_KEY.notify_bili_ids_key, obj );
-	}
-	await redis.deleteKey( "hot_news.sub_genshin_ids" );
-	await redis.deleteKey( "hot_news.genshin_dynamic_ids" );
-	const keys = await redis.getKeysByPrefix( "hot_news.limit_genshin_dynamic_time." );
-	for ( let key of keys ) {
-		const limit = await redis.getString( key );
-		let strings = key.split( "." );
-		const targetId = strings[strings.length - 1];
-		await redis.setString( `${ DB_KEY.limit_bili_dynamic_time_key }.${ targetId }`, limit )
-		await redis.deleteKey( key );
 	}
 }
 
@@ -198,7 +171,7 @@ export async function subInfo(): Promise<PluginSubSetting> {
 }
 
 function decreaseGroup( bot: BOT ) {
-	return async function ( memberData: MemberDecreaseEventData ) {
+	return async function ( memberData: MemberDecreaseEvent ) {
 		// 如果退出群聊的是 BOT 或者群被解散那么就把该群聊的新闻订阅全部取消
 		if ( memberData.user_id === bot.config.number || memberData.dismiss ) {
 			await clearSubscribe( memberData.user_id, MessageType.Group, bot );
@@ -210,9 +183,6 @@ function decreaseGroup( bot: BOT ) {
 export async function init( bot: BOT ): Promise<PluginSetting> {
 	/* 加载 hot_news.yml 配置 */
 	config = loadConfig( bot.file );
-	
-	/* 清除旧数据 */
-	await clearDeprecatedData( bot );
 	
 	scheduleNews = new ScheduleNews( bot, config );
 	/* 创建每日新闻定时任务 */
@@ -238,6 +208,10 @@ export async function init( bot: BOT ): Promise<PluginSetting> {
 		pluginName: "hot-news",
 		aliases: config.aliases,
 		cfgList: [ subscribe_news, unsubscribe_news, limit_genshin_dynamic_notify, my_subscribe_list, remove_subscribe ],
-		repo: "BennettChina/hot-news"
+		repo: {
+			owner: "BennettChina",
+			repoName: "hot-news",
+			ref: "icqq"
+		}
 	};
 }

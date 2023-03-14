@@ -6,7 +6,7 @@ import { getBiliDynamicNew, getBiliLiveStatus } from "#hot-news/util/api";
 import { MessageType } from "@modules/message";
 import { BOT } from "@modules/bot";
 import puppeteer from "puppeteer";
-import { ImgPttElem, segment } from "oicq";
+import { ImageElem, segment, Sendable } from "icqq";
 import { renderer, scheduleNews } from "#hot-news/init";
 import {
 	BiliDynamicCard,
@@ -38,34 +38,96 @@ export class ScheduleNews {
 		this.config = config;
 	}
 	
-	public createNewsSchedule(): void {
-		scheduleJob( "hot-news", "0 30 8 * * *", async () => {
-			const sec: number = randomInt( 0, 180 );
-			const time = new Date().setSeconds( sec * 10 );
-			
-			const job: Job = scheduleJob( time, async () => {
-				NewsServiceFactory.instance( CHANNEL_NAME.toutiao ).handler().then( () => {
-					this.bot.logger.debug( "[hot-news] 每日热点新闻定时任务已处理完成." );
-				} );
-				NewsServiceFactory.instance( CHANNEL_NAME["60sNews"] ).handler().then( () => {
-					this.bot.logger.debug( "[hot-news] 60s新闻定时任务已处理完成." );
-				} );
-				job.cancel();
-			} );
+	private static parseTemplate( template: string, params: Record<string, any> ): Sendable {
+		let text_message: string = template;
+		Object.keys( params ).forEach( key => {
+			const regExp = new RegExp( "\\${\\s*" + key + "\\s*}" );
+			if ( key === "img" ) {
+				text_message = text_message.replace( regExp, "#1" );
+				return;
+			}
+			if ( key === "archive" ) {
+				Object.keys( params[key] ).forEach( archive_key => {
+					const reg = new RegExp( "\\${\\s*archive\\." + archive_key + "\\s*}" );
+					if ( archive_key === "cover" ) {
+						text_message = text_message.replace( reg, "#2" );
+						return;
+					}
+					text_message = text_message.replace( reg, params[key][archive_key] );
+				} )
+			}
+			text_message = text_message.replace( regExp, params[key] );
 		} );
-		this.bot.logger.info( "[hot-news]--每日热点新闻定时任务已创建完成..." );
+		
+		const img_index = template.search( /\${\s*img\s*}/ );
+		const img_last_index = template.search( /\${\s*img\s*}$/ );
+		const cover_index = template.search( /\${\s*archive\.cover\s*}/ );
+		const cover_last_index = template.search( /\${\s*archive\.cover\s*}$/ );
+		
+		// 截图变量位于最后
+		if ( img_last_index !== -1 ) {
+			text_message = text_message.replace( "#1", "" );
+			// 同时使用了视频封面图
+			if ( cover_index !== -1 ) {
+				const split: string[] = text_message.split( "#2" );
+				return [ split[0], params["archive"]["cover"], split[1], params["img"] ];
+			}
+			return [ text_message, params["img"] ];
+		}
+		
+		// 视频封面变量位于最后
+		if ( cover_last_index !== -1 ) {
+			text_message = text_message.replace( "#2", "" );
+			// 同时使用了截图
+			if ( img_index !== -1 ) {
+				const split: string[] = text_message.split( "#1" );
+				return [ split[0], params["img"], split[1], params["archive"]["cover"] ];
+			}
+			return [ text_message, params["archive"]["cover"] ];
+		}
+		
+		// 截图变量处于中间位置
+		if ( img_index !== -1 ) {
+			const split: string[] = text_message.split( "#1" );
+			// 同时使用了视频封面图
+			if ( cover_index !== -1 ) {
+				if ( cover_index < img_index ) {
+					// xxxx 封面 xxxx 截图 xxxx
+					const split2: string[] = split[0].split( "#2" );
+					return [ split2[0], params["archive"]["cover"], split2[1], params["img"], split[1] ];
+				} else {
+					// xxxx 截图 xxxx 封面 xxxx
+					const split2: string[] = split[1].split( "#2" );
+					return [ split[0], params["img"], split2[0], params["archive"]["cover"], split2[1] ];
+				}
+			}
+			
+			return [ split[0], params["img"], split[1] ];
+		}
+		
+		// 视频封面变量处于中间位置
+		if ( cover_index !== -1 ) {
+			const split: string[] = text_message.split( "#2" );
+			// 同时使用了截图
+			if ( img_index !== -1 ) {
+				if ( img_index < cover_index ) {
+					// xxxx 截图 xxxx 封面 xxxx
+					const split2: string[] = split[0].split( "#1" );
+					return [ split2[0], params["img"], split2[1], params["archive"]["cover"], split[1] ];
+				} else {
+					// xxxx 封面 xxxx 截图 xxxx
+					const split2: string[] = split[1].split( "#1" );
+					return [ split[0], params["archive"]["cover"], split2[0], params["img"], split2[1] ];
+				}
+			}
+			
+			return [ split[0], params["archive"]["cover"], split[1] ];
+		}
+		return text_message;
 	}
 	
-	public initSchedule(): void {
-		/* 创建原神动态定时任务 */
-		scheduleNews.createBiliSchedule();
-		
-		if ( this.config.subscribeMoyu.enable ) {
-			scheduleJob( "hot-news-moyu-job", this.config.subscribeMoyu.cronRule, async () => {
-				await NewsServiceFactory.instance( CHANNEL_NAME.moyu ).handler();
-			} );
-			this.bot.logger.info( "[hot-news]--摸鱼日报定时任务已创建完成" );
-		}
+	private static completeProtocol( base64Str: string ): string {
+		return `base64://${ base64Str }`;
 	}
 	
 	public async refresh(): Promise<string> {
@@ -85,28 +147,58 @@ export class ScheduleNews {
 		}
 	}
 	
+	public createNewsSchedule(): void {
+		scheduleJob( "hot-news", "0 30 8 * * *", async () => {
+			const sec: number = randomInt( 0, 180 );
+			const time = new Date().setSeconds( sec * 10 );
+			
+			const job: Job = scheduleJob( time, async () => {
+				NewsServiceFactory.instance( CHANNEL_NAME.toutiao ).handler().then( () => {
+					this.bot.logger.debug( "[hot-news] 每日热点新闻定时任务已处理完成." );
+				} );
+				NewsServiceFactory.instance( CHANNEL_NAME["60sNews"] ).handler().then( () => {
+					this.bot.logger.debug( "[hot-news] 60s新闻定时任务已处理完成." );
+				} );
+				job.cancel();
+			} );
+		} );
+		this.bot.logger.info( "[hot-news] 每日热点新闻定时任务已创建完成..." );
+	}
+	
+	public initSchedule(): void {
+		/* 创建原神动态定时任务 */
+		scheduleNews.createBiliSchedule();
+		
+		if ( this.config.subscribeMoyu.enable ) {
+			scheduleJob( "hot-news-moyu-job", this.config.subscribeMoyu.cronRule, async () => {
+				await NewsServiceFactory.instance( CHANNEL_NAME.moyu ).handler();
+			} );
+			this.bot.logger.info( "[hot-news] 摸鱼日报定时任务已创建完成" );
+		}
+	}
+	
 	public createBiliSchedule(): void {
 		// B站动态定时轮询任务
 		scheduleJob( "hot-news-bilibili-dynamic-job", this.config.biliDynamicScheduleRule, async () => {
 			await this.notifyBiliDynamic();
 		} );
-		this.bot.logger.info( "[hot-news]--[bilibili-dynamic-job]--B站动态定时任务已创建完成..." );
+		this.bot.logger.info( "[hot-news] [bilibili-dynamic-job] B站动态定时任务已创建完成..." );
 		
 		// B站直播定时轮询任务
 		scheduleJob( "hot-news-bilibili-live-job", this.config.biliLiveScheduleRule, async () => {
 			await this.notifyBiliLive();
 		} );
-		this.bot.logger.info( "[hot-news]--[bilibili-live-job]--B站直播定时任务已创建完成..." );
+		this.bot.logger.info( "[hot-news] [bilibili-live-job] B站直播定时任务已创建完成..." );
 	}
 	
 	public async initBiliDynamic( uid: number ): Promise<void> {
-		this.bot.logger.info( `[hot-news]--开始初始化B站[${ uid }]动态数据...` )
+		this.bot.logger.info( `[hot-news] 开始初始化B站[${ uid }]动态数据...` )
 		const dynamic_list = await getBiliDynamicNew( uid, true );
 		if ( dynamic_list.length > 0 ) {
 			const ids: string[] = dynamic_list.map( d => d.id_str );
 			await this.bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, ...ids );
 		}
-		this.bot.logger.info( `[hot-news]--初始化B站[${ uid }]动态数据完成.` );
+		this.bot.logger.info( `[hot-news] 初始化B站[${ uid }]动态数据完成.` );
 	}
 	
 	public async initAllBiliDynamic(): Promise<void> {
@@ -122,7 +214,7 @@ export class ScheduleNews {
 		for ( let uid of uidList ) {
 			await this.initBiliDynamic( uid );
 		}
-		this.bot.logger.info( `[hot-news]--初始化B站所有已订阅的UP主的动态数据完成` )
+		this.bot.logger.info( `[hot-news] 初始化B站所有已订阅的UP主的动态数据完成` )
 	}
 	
 	private async notifyBiliDynamic(): Promise<void> {
@@ -161,7 +253,7 @@ export class ScheduleNews {
 				const pub_tss: string = formatTimestamp( pub_tsm );
 				// 判断动态是否已经过时
 				if ( Date.now() - pub_tsm > limitMillisecond ) {
-					this.bot.logger.info( `[hot-news]--[${ name }]-[${ pub_tss }]发布的动态[${ card.id_str }]已过时不再推送!` )
+					this.bot.logger.info( `[hot-news] [${ name }]-[${ pub_tss }]发布的动态[${ card.id_str }]已过时不再推送!` )
 					// 把新的动态ID加入本地数据库
 					await this.bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, card.id_str );
 					continue;
@@ -174,7 +266,7 @@ export class ScheduleNews {
 				} else if ( card.type === 'DYNAMIC_TYPE_LIVE_RCMD' ) {
 					// do nothing
 				} else if ( card.type === "DYNAMIC_TYPE_AV" ) {
-					this.bot.logger.info( `[hot-news]--获取到B站[${ name }]-[${ pub_tss }]发布的新动态--[${ card.id_str }]--[${ card.modules.module_dynamic.desc?.text || "投稿视频" }]` );
+					this.bot.logger.info( `[hot-news] 获取到B站[${ name }]-[${ pub_tss }]发布的新动态 [${ card.id_str }] [${ card.modules.module_dynamic.desc?.text || "投稿视频" }]` );
 					const { archive } = <BiliDynamicMajorArchive>card.modules.module_dynamic.major;
 					const dynamicInfo: DynamicInfo = {
 						id: card.id_str,
@@ -190,11 +282,7 @@ export class ScheduleNews {
 					await this.normalDynamicHandle( dynamicInfo, chatInfo );
 					i++;
 				} else {
-					// debug
-					if ( card.id_str && card.modules.module_dynamic.desc?.text === undefined ) {
-						this.bot.logger.debug( `[hot-news]--获取到B站[${ name }]-[${ pub_tss }]发布的新动态--[${ card.id_str }]--${ card }` );
-					}
-					this.bot.logger.info( `[hot-news]--获取到B站[${ name }]-[${ pub_tss }]发布的新动态--[${ card.id_str }]--[${ card.modules.module_dynamic.desc?.text }]` );
+					this.bot.logger.info( `[hot-news] 获取到B站[${ name }]-[${ pub_tss }]发布的新动态 [${ card.id_str }] [${ card.modules.module_dynamic.desc?.text }]` );
 					const dynamicInfo: DynamicInfo = {
 						id: card.id_str,
 						name,
@@ -234,18 +322,24 @@ export class ScheduleNews {
 				const notification_status = await this.bot.redis.getString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }` );
 				const live: BiliLiveInfo = await getBiliLiveStatus( uid, false, this.config.biliLiveApiCacheTime );
 				if ( !notification_status && live?.liveRoom?.liveStatus === 1 ) {
-					// noinspection JSUnusedLocalSymbols
 					const {
-						name: up_name,
+						name,
 						liveRoom: { title, url, cover, watched_show: { num, text_large, text_small }, live_time }
 					} = live;
-					// noinspection JSUnusedLocalSymbols
 					const liveTime: string = live_time === 0 ? "00:00:00" : msToHumanize( Date.now() - live_time * 1000 );
 					const cacheTime: number = this.config.biliLiveCacheTime * 60 * 60;
-					const image: ImgPttElem = segment.image( cover, true, 60 );
-					// noinspection JSUnusedLocalSymbols
-					const img: string = segment.toCqcode( image );
-					let msg = eval( this.config.liveTemplate );
+					const img: ImageElem = segment.image( cover, true, 60 );
+					const params: Record<string, any> = {
+						name,
+						title,
+						url,
+						img,
+						num,
+						text_large,
+						text_small,
+						liveTime
+					}
+					const msg: Sendable = ScheduleNews.parseTemplate( this.config.liveTemplate, params );
 					await this.sendMsg( chatInfo.type, chatInfo.targetId, msg );
 					await this.bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }`, JSON.stringify( live ), cacheTime );
 					i++;
@@ -265,26 +359,16 @@ export class ScheduleNews {
 	}
 	
 	private async articleHandle( card: BiliDynamicCard, { type, targetId }: ChatInfo ): Promise<void> {
-		// noinspection JSUnusedLocalSymbols
 		const {
 			article: {
-				covers,
 				desc,
 				title,
 				jump_url,
 				label
 			}
 		} = <BiliDynamicMajorArticle>card.modules.module_dynamic.major;
-		// noinspection JSUnusedLocalSymbols
-		const cover_list = covers.map( ( l: string ) => {
-			const image: ImgPttElem = segment.image( l, true, 60 );
-			return segment.toCqcode( image );
-		} );
-		// noinspection JSUnusedLocalSymbols
 		const { name, mid: uid, pub_time, pub_ts } = card.modules.module_author;
-		// noinspection JSUnusedLocalSymbols
 		const id = card.id_str;
-		// noinspection JSUnusedLocalSymbols
 		const {
 			comment: { count: comment_num },
 			like: { count: like_num },
@@ -292,32 +376,45 @@ export class ScheduleNews {
 		} = card.modules.module_stat;
 		const pub_tsm: number = pub_ts * 1000;
 		const pub_tss: string = formatTimestamp( pub_tsm );
-		this.bot.logger.info( `[hot-news]--获取到B站-[${ pub_tss }]发布的${ name }新动态--[${ id }]--[${ desc }]` );
+		this.bot.logger.info( `[hot-news] 获取到B站-[${ pub_tss }]发布的${ name }新动态 [${ id }] [${ desc }]` );
 		const url = `https:${ jump_url }`;
-		let msg = eval( this.config.articleDynamicTemplate );
+		const params: Record<string, any> = {
+			id,
+			name,
+			uid,
+			pub_time,
+			pub_tss,
+			like_num,
+			comment_num,
+			forward_num,
+			title,
+			label,
+			url
+		}
+		const msg: Sendable = ScheduleNews.parseTemplate( this.config.articleDynamicTemplate, params );
 		await this.sendMsg( type, targetId, msg );
 		
 		// 检测是否图片消息是否已经缓存
-		let imgMsg: string = await this.bot.redis.getString( `${ DB_KEY.img_msg_key }.${ card.id_str }` );
+		let imgMsg: Sendable = await this.bot.redis.getString( `${ DB_KEY.img_msg_key }.${ card.id_str }` );
 		if ( imgMsg ) {
-			this.bot.logger.info( `[hot-news]--检测到动态[${ card.id_str }]渲染图的缓存，不再渲染新图，直接使用缓存内容.` )
-			await this.sendMsg( type, targetId, imgMsg );
+			this.bot.logger.info( `[hot-news] 检测到动态[${ card.id_str }]渲染图的缓存，不再渲染新图，直接使用缓存内容.` )
+			await this.sendMsg( type, targetId, JSON.parse( imgMsg ) );
 			return;
 		}
 		
 		// 图可能比较大，单独再发送一张图
 		const res = await renderer.asForFunction( url, ScreenshotService.articleDynamicPageFunction, this.viewPort );
 		if ( res.code === 'ok' ) {
-			imgMsg = ScheduleNews.asCqCode( res.data );
-			await this.bot.redis.setString( `${ DB_KEY.img_msg_key }.${ card.id_str }`, imgMsg, this.config.biliScreenshotCacheTime );
+			imgMsg = segment.image( ScheduleNews.completeProtocol( <string>res.data ) );
+			await this.bot.redis.setString( `${ DB_KEY.img_msg_key }.${ card.id_str }`, JSON.stringify( imgMsg ), this.config.biliScreenshotCacheTime );
 		} else {
 			this.bot.logger.error( res.error );
-			imgMsg = eval( this.config.errorMsgTemplate );
+			imgMsg = ScheduleNews.parseTemplate( this.config.errorMsgTemplate, params );
 		}
 		await this.sendMsg( type, targetId, imgMsg );
 	}
 	
-	private async sendMsg( type: number, targetId: number, msg: string ) {
+	private async sendMsg( type: number, targetId: number, msg: Sendable ) {
 		if ( type === MessageType.Private ) {
 			const sendMessage = this.bot.message.getSendMessageFunc( targetId, MessageType.Private );
 			await sendMessage( msg );
@@ -334,7 +431,6 @@ export class ScheduleNews {
 		}
 	}
 	
-	// noinspection JSUnusedLocalSymbols
 	private async normalDynamicHandle( {
 		                                   id,
 		                                   name,
@@ -350,37 +446,67 @@ export class ScheduleNews {
 		                                   targetId
 	                                   }: ChatInfo ): Promise<void> {
 		// 检测是否图片消息是否已经缓存
-		let msg: string = await this.bot.redis.getString( `${ DB_KEY.img_msg_key }.${ id }` );
+		const msg: string = await this.bot.redis.getString( `${ DB_KEY.img_msg_key }.${ id }` );
 		if ( msg ) {
-			this.bot.logger.info( `[hot-news]--检测到动态[${ id }]渲染图的缓存，不再渲染新图，直接使用缓存内容.` )
-			await this.sendMsg( type, targetId, msg );
+			this.bot.logger.info( `[hot-news] 检测到动态[${ id }]渲染图的缓存，不再渲染新图，直接使用缓存内容.` )
+			await this.sendMsg( type, targetId, JSON.parse( msg ) );
 			return;
 		}
 		
+		let message: Sendable;
 		const url = `https://t.bilibili.com/${ id }`;
 		const res = await renderer.asForFunction( url, ScreenshotService.normalDynamicPageFunction, this.viewPort );
 		if ( res.code === 'ok' ) {
-			// noinspection JSUnusedLocalSymbols
-			const img = ScheduleNews.asCqCode( res.data );
-			// 如果是视频投稿，那么把cover设置为它对应的cqcode
+			const img: ImageElem = segment.image( ScheduleNews.completeProtocol( <string>res.data ) );
+			// 如果是视频投稿，那么把cover转为 ImageElem 对象
 			if ( archive ) {
-				const image: ImgPttElem = segment.image( archive.cover, true, 60 );
-				archive.cover = segment.toCqcode( image );
+				archive.cover = segment.image( <string>archive.cover, true, 60 );
 				archive.jump_url = "https:" + archive.jump_url;
-				msg = eval( this.config.videoDynamicTemplate );
+				const params: Record<string, any> = {
+					id,
+					name,
+					uid,
+					pub_time,
+					pub_tss,
+					like_num,
+					comment_num,
+					forward_num,
+					url,
+					img,
+					archive
+				}
+				message = ScheduleNews.parseTemplate( this.config.videoDynamicTemplate, params );
 			} else {
-				msg = eval( this.config.dynamicTemplate );
+				const params: Record<string, any> = {
+					id,
+					name,
+					uid,
+					pub_time,
+					pub_tss,
+					like_num,
+					comment_num,
+					forward_num,
+					url,
+					img
+				}
+				message = ScheduleNews.parseTemplate( this.config.dynamicTemplate, params );
 			}
-			await this.bot.redis.setString( `${ DB_KEY.img_msg_key }.${ id }`, msg, this.config.biliScreenshotCacheTime );
+			await this.bot.redis.setString( `${ DB_KEY.img_msg_key }.${ id }`, JSON.stringify( message ), this.config.biliScreenshotCacheTime );
 		} else {
 			this.bot.logger.error( res.error );
-			msg = eval( this.config.errorMsgTemplate );
+			const params: Record<string, any> = {
+				id,
+				name,
+				uid,
+				pub_time,
+				pub_tss,
+				like_num,
+				comment_num,
+				forward_num,
+				url
+			}
+			message = ScheduleNews.parseTemplate( this.config.errorMsgTemplate, params );
 		}
-		await this.sendMsg( type, targetId, msg );
-	}
-	
-	private static asCqCode( base64Str: string ): string {
-		const base64: string = `base64://${ base64Str }`;
-		return `[CQ:image,file=${ base64 }]`;
+		await this.sendMsg( type, targetId, message );
 	}
 }

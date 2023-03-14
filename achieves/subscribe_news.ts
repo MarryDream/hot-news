@@ -5,12 +5,12 @@ import { getChannelKey, getChatInfo } from "#hot-news/util/tools";
 import { CHANNEL_NAME, DB_KEY } from "#hot-news/util/constants";
 import { getHashField } from "#hot-news/util/RedisUtils";
 import { config, scheduleNews } from "#hot-news/init";
-import { GroupMessageEventData, Sendable } from "oicq";
+import { GroupMessageEvent, MessageRet, Sendable } from "icqq";
 import Database from "@modules/database";
 import { NewsServiceFactory } from "#hot-news/module/NewsServiceFactory";
 
 
-async function biliHandler( targetId: number, sendMessage: ( content: Sendable, allowAt?: boolean ) => Promise<void>, redis: Database, db_data: string, uid: number, upName: string ): Promise<void> {
+async function biliHandler( targetId: number, sendMessage: ( content: Sendable, allowAt?: boolean ) => Promise<MessageRet>, redis: Database, db_data: string, uid: number, upName: string ): Promise<void> {
 	// 获取用户订阅的UP的uid
 	const uidListStr: string = await getHashField( DB_KEY.notify_bili_ids_key, `${ targetId }` ) || "[]";
 	const uidList: number[] = JSON.parse( uidListStr );
@@ -61,7 +61,7 @@ export async function main( { sendMessage, messageData, redis, logger }: InputPa
 	const db_data = JSON.stringify( { targetId, type } );
 	
 	if ( type === MessageType.Group ) {
-		const groupMsg = <GroupMessageEventData>messageData;
+		const groupMsg = <GroupMessageEvent>messageData;
 		if ( groupMsg.sender.role === 'member' ) {
 			await sendMessage( '您不是本群管理不能使用该指令', true );
 			return;

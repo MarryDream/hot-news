@@ -5,12 +5,12 @@ import { getHashField } from "#hot-news/util/RedisUtils";
 import { CHANNEL_NAME, DB_KEY } from "#hot-news/util/constants";
 import { getBiliLiveStatus } from "#hot-news/util/api";
 import { config } from "#hot-news/init";
-import { GroupMessageEventData } from "oicq";
+import { GroupMessageEvent } from "icqq";
 
 export async function main( { sendMessage, messageData, redis }: InputParameter ): Promise<void> {
 	const { type, targetId } = getChatInfo( messageData );
 	if ( type === MessageType.Group ) {
-		const groupMsg = <GroupMessageEventData>messageData;
+		const groupMsg = <GroupMessageEvent>messageData;
 		if ( groupMsg.sender.role === 'member' ) {
 			await sendMessage( '您不是本群管理不能使用该指令', true );
 			return;

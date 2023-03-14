@@ -4,13 +4,13 @@ import { getChannelKey, getChatInfo } from "#hot-news/util/tools";
 import { MessageType } from "@modules/message";
 import { getHashField } from "#hot-news/util/RedisUtils";
 import Database from "@modules/database";
-import { GroupMessageEventData, Sendable } from "oicq";
+import { GroupMessageEvent, MessageRet, Sendable } from "icqq";
 
 export async function main( { sendMessage, messageData, redis }: InputParameter ): Promise<void> {
 	const channel = messageData.raw_message;
 	const { type, targetId } = getChatInfo( messageData );
 	if ( type === MessageType.Group ) {
-		const groupMsg = <GroupMessageEventData>messageData;
+		const groupMsg = <GroupMessageEvent>messageData;
 		if ( groupMsg.sender.role === 'member' ) {
 			await sendMessage( '您不是本群管理不能使用该指令', true );
 			return;
@@ -58,7 +58,7 @@ export async function main( { sendMessage, messageData, redis }: InputParameter 
 	}
 }
 
-async function unsubscribeBili( targetId: number, member: string, uid: number, redis: Database, sendMessage: ( content: Sendable, allowAt?: boolean ) => Promise<void> ) {
+async function unsubscribeBili( targetId: number, member: string, uid: number, redis: Database, sendMessage: ( content: Sendable, allowAt?: boolean ) => Promise<MessageRet> ) {
 	let exist: boolean = await redis.existSetMember( DB_KEY.sub_bili_ids_key, member )
 	if ( !exist ) {
 		await sendMessage( `[${ targetId }]未订阅任何B站UP的动态和直播` );
