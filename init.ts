@@ -170,13 +170,13 @@ export async function subInfo(): Promise<PluginSubSetting> {
 	}
 }
 
-function decreaseGroup( bot: BOT ) {
-	return async function ( memberData: MemberDecreaseEvent ) {
+function decreaseGroup( bot: BOT ): void {
+	bot.client.on( "notice.group.decrease", async ( memberData: MemberDecreaseEvent ) => {
 		// 如果退出群聊的是 BOT 或者群被解散那么就把该群聊的新闻订阅全部取消
 		if ( memberData.user_id === bot.config.number || memberData.dismiss ) {
 			await clearSubscribe( memberData.user_id, MessageType.Group, bot );
 		}
-	}
+	} );
 }
 
 // 不可 default 导出，函数名固定
@@ -198,7 +198,7 @@ export async function init( bot: BOT ): Promise<PluginSetting> {
 	scheduleNews.initSchedule();
 	
 	// 监听群聊退出事件
-	bot.client.on( "notice.group.decrease", decreaseGroup( bot ) );
+	decreaseGroup( bot );
 	bot.logger.info( "[hot-news]群聊退出事件监听已启动成功" )
 	
 	bot.refresh.registerRefreshableFile( "hot_news", config );
