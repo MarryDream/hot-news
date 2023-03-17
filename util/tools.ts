@@ -1,6 +1,10 @@
 import { isGroupMessage, isPrivateMessage, Message, MessageType } from "@modules/message";
 import { ChatInfo } from "#hot-news/types/type";
 import { CHANNEL_NAME } from "#hot-news/util/constants";
+import { exec } from "child_process";
+import FileManagement from "@modules/file";
+import { BOT } from "@modules/bot";
+import { config } from "#hot-news/init";
 
 export const formatDate: ( date: Date, format?: string ) => string = ( date, format = "-" ) => {
 	const dateArr: number[] = [ date.getFullYear(), date.getMonth() + 1, date.getDate() ];
@@ -66,4 +70,40 @@ export function msToHumanize( ms: number ): string {
 	const minute = Math.floor( ( ms - hour * 3600 ) / 60 );
 	const second = ms % 60;
 	return `${ hour }:${ minute }:${ second }`;
+}
+
+/* 命令执行 */
+async function execHandle( command: string ): Promise<string> {
+	return new Promise( ( resolve, reject ) => {
+		exec( command, ( error, stdout, stderr ) => {
+			if ( error ) {
+				reject( error );
+			} else {
+				resolve( stdout );
+			}
+		} )
+	} )
+}
+
+function checkDependencies( file: FileManagement, ...dependencies ): string[] {
+	const path: string = file.getFilePath( "package.json", "root" );
+	const { dependencies: dep } = require( path );
+	// 过滤出未安装的依赖
+	const keys: string[] = Object.keys( dep );
+	return dependencies.filter( dependency => !keys.includes( dependency ) );
+}
+
+export async function installDep( { logger, file }: BOT ): Promise<void> {
+	logger.info( "[hot-news] 开始检测插件需要的依赖是否已安装..." );
+	const dependencies: string[] = [];
+	if ( config.subscribeMoyu.enable && config.subscribeMoyu.apiType === 2 ) {
+		dependencies.push( "sharp" );
+	}
+	const uninstall_dependencies: string[] = checkDependencies( file, ...dependencies );
+	for ( let uni_dep of uninstall_dependencies ) {
+		logger.info( `[hot-news] 检测到 ${ uni_dep } 依赖尚未安装，将自动安装该依赖...` )
+		const stdout = await execHandle( `npm i ${ uni_dep }` );
+		logger.info( stdout );
+	}
+	logger.info( "[hot-news] 所有插件需要的依赖已安装" );
 }

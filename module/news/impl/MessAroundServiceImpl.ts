@@ -8,6 +8,7 @@ import { MessageMethod } from "#hot-news/module/message/MessageMethod";
 import { getMoyuImg, getMoyuUrl } from "#hot-news/util/api";
 import { config } from "#hot-news/init";
 import { wait } from "#hot-news/util/tools";
+import fetch from "node-fetch";
 
 export class MessAroundServiceImpl implements NewsService {
 	
@@ -17,6 +18,12 @@ export class MessAroundServiceImpl implements NewsService {
 			url = await getMoyuImg();
 		} else {
 			url = getMoyuUrl();
+			// 转换下图片(webp -> png)
+			const response = await fetch( url );
+			const buffer: Buffer = await response.buffer();
+			const sharp = require( "sharp" );
+			const png: Buffer = await sharp( buffer ).png().toBuffer();
+			return segment.image( png );
 		}
 		
 		if ( url ) {

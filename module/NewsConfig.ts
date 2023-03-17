@@ -1,5 +1,7 @@
 import { RefreshCatch } from "@modules/management/refresh";
 import { PluginAlias } from "@modules/plugin";
+import { installDep } from "#hot-news/util/tools";
+import bot from "ROOT";
 
 export default class NewsConfig {
 	/** 用户的最大订阅数量 */
@@ -43,17 +45,17 @@ export default class NewsConfig {
 	
 	public static init = {
 		maxSubscribeNum: 5,
-		biliDynamicScheduleRule: "0 0/3 * * * *",
-		biliLiveScheduleRule: "0 0/3 * * * *",
-		biliDynamicApiCacheTime: 175,
-		biliLiveApiCacheTime: 175,
-		biliScreenshotCacheTime: 60,
-		biliLiveCacheTime: 8,
-		liveTemplate: "[B站] ${name}开播啦!\n标题：${title}\n直播间：${url}\n${img}",
-		dynamicTemplate: "[B站] ${name}发布新动态了!\n动态地址：${url}\n${img}",
-		articleDynamicTemplate: "[B站] ${name}发布新动态了!\n动态地址：${url}\n ${desc}",
-		videoDynamicTemplate: "[B站] ${name}发布新的投稿视频了!\n标题：${archive.title}\n简介：${archive.desc}\n视频地址：${archive.jump_url}\n${img}",
-		errorMsgTemplate: "[B站] ${name}发布新动态了\n动态地址：${url}\n(＞﹏＜)[图片渲染出错了，请自行前往B站查看最新动态。]",
+		biliDynamicScheduleRule: "0 * * * * *",
+		biliLiveScheduleRule: "0 * * * * *",
+		biliDynamicApiCacheTime: 55,
+		biliLiveApiCacheTime: 55,
+		biliScreenshotCacheTime: 55,
+		biliLiveCacheTime: 20,
+		liveTemplate: "【直播通知】\n${name}开播啦!\n标题：${title}\n在线人气：${num}\n开播时长：${liveTime}\n直播间：${url}\n${img}",
+		dynamicTemplate: "【动态通知】\n${name}发布新动态了!\n动态地址：${url}\n${img}",
+		articleDynamicTemplate: "【动态通知】\n${name}发布新动态了!\n动态地址：${url}\n ${desc}",
+		videoDynamicTemplate: "【投稿通知】\n${name}发布新的投稿视频了!\n标题：${archive.title}\n简介：${archive.desc}\n视频地址：${archive.jump_url}\n${img}",
+		errorMsgTemplate: "${name}发布新动态了\n动态地址：${url}\n\n图片渲染出错了，请自行前往B站查看最新动态。",
 		subscribeMoyu: {
 			enable: false,
 			cronRule: "0 0 9 * * *",
@@ -129,6 +131,7 @@ export default class NewsConfig {
 			for ( let alias of this.aliases ) {
 				PluginAlias[alias] = "hot-news";
 			}
+			installDep( bot ).then();
 			return "hot_news.yml 重新加载完毕";
 		} catch ( error ) {
 			throw <RefreshCatch>{

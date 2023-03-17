@@ -85,47 +85,52 @@ git clone https://gitclone.com/github.com/BennettChina/hot-news.git
 # 用户的最大订阅数量
 maxSubscribeNum: 5
 # B站动态查询定时任务规则(cron表达式)
-biliDynamicScheduleRule: 0 0/3 * * * *
+biliDynamicScheduleRule: 0 * * * * *
 # B站直播查询定时任务规则(cron表达式)
-biliLiveScheduleRule: 0 0/3 * * * *
+biliLiveScheduleRule: 0 * * * * *
 # B站动态API信息缓存时间（秒），该时间必须小于动态的轮询间隔时间
-biliDynamicApiCacheTime: 175
+biliDynamicApiCacheTime: 55
 # B站直播API信息缓存时间（秒），该时间必须小于动态的轮询间隔时间
-biliLiveApiCacheTime: 175
+biliLiveApiCacheTime: 55
 # B站动态截图缓存时间（秒），该时间必须小于动态的轮询间隔时间
-biliScreenshotCacheTime: 60
+biliScreenshotCacheTime: 55
 # B站直播状态缓存时间（小时），在此时间内不会再次推送该直播间
-biliLiveCacheTime: 8
-# 推送B站动态时是否发送该动态的访问链接
-isSendUrl: false
+biliLiveCacheTime: 20
 # B站直播推送的模版消息
 liveTemplate: |-
-    [B站] ${name}开播啦!
+    【直播通知】
+    ${name}开播啦!
     标题：${title}
+    在线人气：${num}
+    开播时长：${liveTime}
     直播间：${url}
     ${img}
 # B站常规动态推送的模版消息
 dynamicTemplate: |-
-    [B站] ${name}发布新动态了!
+    【动态通知】
+    ${name}发布新动态了!
     动态地址：${url}
     ${img}
 # B站专栏动态推送的模版消息
 articleDynamicTemplate: |-
-    [B站] ${name}发布新动态了!
+    【动态通知】
+    ${name}发布新动态了!
     动态地址：${url}
     ${desc}
 # B站视频动态推送的模版消息
 videoDynamicTemplate: |-
-    [B站] ${name}发布新的投稿视频了!
+    【投稿通知】
+    ${name}发布新的投稿视频了!
     标题：${archive.title}
     简介：${archive.desc}
     视频地址：${archive.jump_url}
     ${img}
 # B站动态截图渲染失败的模版消息
 errorMsgTemplate: |-
-    [B站] ${name}发布新动态了
+    ${name}发布新动态了
     动态地址：${url}
-    (＞﹏＜)[图片渲染出错了，请自行前往B站查看最新动态。]
+
+    图片渲染出错了，请自行前往B站查看最新动态。
 # 摸鱼日报订阅配置
 subscribeMoyu:
     enable: false
@@ -252,7 +257,8 @@ aliases:
 
 ## 更新日志
 
-- 2022/10/22 支持主项目的 `2.` 版本，使用全新的 `oicq`(⚠️注意：需要将配置文件删除重新生成，或者手动按照提供的格式更改)。
+- 2023/03/17 修复摸鱼日报API类型为2时图片加载不出来的问题。
+- 2023/03/14 支持主项目的 `verify` 版本，使用全新的 `icqq`(⚠️注意：需要将配置文件删除重新生成，或者手动按照提供的格式更改)。
 - 2022/10/07 支持插件的别名更新
 - 2022/09/21 更换获取B站直播间状态的 API 以尝试修复获取个人信息的直播信息时的 401 错误。
 - 2022/09/20 修复B站常规动态截图失败的问题。

@@ -10,6 +10,7 @@ import NewsConfig from "#hot-news/module/NewsConfig";
 import FileManagement from "@modules/file";
 import { ChatInfo } from "#hot-news/types/type";
 import { MemberDecreaseEvent } from "icqq";
+import { installDep } from "#hot-news/util/tools";
 
 const subscribe_news: OrderConfig = {
 	type: "order",
@@ -163,6 +164,7 @@ export async function newsSubs( { redis }: BOT ): Promise<SubInfo[]> {
 	} ]
 }
 
+// noinspection JSUnusedGlobalSymbols
 export async function subInfo(): Promise<PluginSubSetting> {
 	return {
 		subs: newsSubs,
@@ -203,6 +205,9 @@ export async function init( bot: BOT ): Promise<PluginSetting> {
 	
 	bot.refresh.registerRefreshableFile( "hot_news", config );
 	bot.refresh.registerRefreshableFunc( scheduleNews );
+	
+	// 检测并安装依赖
+	installDep( bot ).then();
 	
 	return {
 		pluginName: "hot-news",
