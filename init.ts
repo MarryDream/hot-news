@@ -216,7 +216,7 @@ export async function init( bot: BOT ): Promise<PluginSetting> {
 		repo: {
 			owner: "BennettChina",
 			repoName: "hot-news",
-			ref: "icqq"
+			ref: "main"
 		}
 	};
 }
