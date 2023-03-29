@@ -1,0 +1,52 @@
+.bili-dyn-content__orig__author {
+	margin-bottom: 4px;
+}
+
+.dyn-orig-author {
+	align-items: center;
+	display: flex;
+	height: 25px;
+	justify-content: space-between;
+	margin-bottom: 8px;
+	width: 100%;
+}
+
+.dyn-orig-author__left {
+	align-items: center;
+	display: flex;
+	flex: 1;
+	padding: 10px 0 0 5px;
+}
+
+.dyn-orig-author__face {
+	cursor: pointer;
+	height: 25px;
+	margin-right: 4px;
+	width: 25px;
+}
+
+.bili-awesome-img {
+	background-size: cover;
+	height: 100%;
+	width: 100%;
+}
+
+.bili-awesome-img, .topic-panel__nav-more:after {
+	background-position: 50%;
+	background-repeat: no-repeat;
+}
+
+.dyn-orig-author__face__img {
+	border-radius: 50%;
+}
+
+.fs-medium {
+	font-size: 15px;
+	line-height: 25px;
+}
+
+.dyn-orig-author__name {
+	cursor: pointer;
+	display: inline-block;
+	line-height: 18px;
+}

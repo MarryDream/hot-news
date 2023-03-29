@@ -2,10 +2,10 @@ import axios, { AxiosError } from "axios";
 import bot from 'ROOT';
 import { formatDate } from "#hot-news/util/tools";
 import { DB_KEY } from "#hot-news/util/constants";
-import { BiliDynamicCard, BiliLiveInfo, News } from "#hot-news/types/type";
+import { BiliDynamicCard, BiliLiveInfo, LiveUserInfo, News, UpCardInfo } from "#hot-news/types/type";
 import moment from "moment";
 import { config } from "#hot-news/init";
-import { reject } from "lodash";
+import fetch from "node-fetch";
 
 const API = {
 	sina: 'https://www.anyknew.com/api/v1/sites/sina',
@@ -19,6 +19,9 @@ const API = {
 	moyu: 'https://api.vvhan.com/api/moyu?type=json',
 	moyu2: 'https://api.j4u.ink/proxy/redirect/moyu/calendar/$.png',
 	"60s": 'https://api.vvhan.com/api/60s',
+	biliCard: "https://api.bilibili.com/x/web-interface/card",
+	biliStat: "https://api.bilibili.com/x/relation/stat",
+	biliLiveUserInfo: "https://api.live.bilibili.com/live_user/v1/Master/info",
 }
 
 const NEWS_HEADERS = {
@@ -142,7 +145,7 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 		} ).catch( ( reason ): any => {
 			if ( axios.isAxiosError( reason ) ) {
 				let err = <AxiosError>reason;
-				bot.logger.error( `获取B站[${ uid }]动态失败, reason: ${ err.message }` );
+				bot.logger.error( `获取B站[${ uid }]动态失败(axiosError), reason: ${ err.message }` );
 			} else {
 				bot.logger.error( `获取B站[${ uid }]动态失败, reason:`, reason );
 			}
@@ -184,7 +187,7 @@ export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number
 		} ).catch( ( reason ): any => {
 			if ( axios.isAxiosError( reason ) ) {
 				let err = <AxiosError>reason;
-				bot.logger.error( `获取B站[${ uid }]个人信息失败, reason: ${ err.message }` );
+				bot.logger.error( `获取B站[${ uid }]个人信息失败(axiosError), reason: ${ err.message }` );
 			} else {
 				bot.logger.error( `获取B站[${ uid }]个人信息失败, reason:`, reason );
 			}
@@ -201,7 +204,14 @@ export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number
 						num: 0,
 						text_small: "",
 						text_large: ""
-					}
+					},
+					room_id: 0,
+					short_id: 0,
+					area_name: '',
+					area_v2_name: '',
+					area_v2_parent_name: '',
+					face: '',
+					tag_name: ''
 				},
 				name: uid.toString( 10 )
 			}
@@ -249,7 +259,14 @@ export const getBiliLiveStatus: ( uid: number, no_cache?: boolean, cache_time?: 
 							num: 0,
 							text_small: "",
 							text_large: ""
-						}
+						},
+						room_id: 0,
+						short_id: 0,
+						area_name: '',
+						area_v2_name: '',
+						area_v2_parent_name: '',
+						face: '',
+						tag_name: ''
 					},
 					name: uid.toString( 10 )
 				}
@@ -265,7 +282,12 @@ export const getBiliLiveStatus: ( uid: number, no_cache?: boolean, cache_time?: 
 				live_time,
 				cover_from_user,
 				room_id,
-				short_id
+				short_id,
+				area_name,
+				area_v2_name,
+				area_v2_parent_name,
+				face,
+				tag_name
 			} = r.data.data[uid];
 			const info = {
 				liveRoom: {
@@ -280,7 +302,14 @@ export const getBiliLiveStatus: ( uid: number, no_cache?: boolean, cache_time?: 
 						num: online,
 						text_small: "",
 						text_large: ""
-					}
+					},
+					room_id,
+					short_id,
+					area_name,
+					area_v2_name,
+					area_v2_parent_name,
+					face,
+					tag_name
 				},
 				name: uname
 			}
@@ -291,7 +320,7 @@ export const getBiliLiveStatus: ( uid: number, no_cache?: boolean, cache_time?: 
 		} ).catch( ( reason ): any => {
 			if ( axios.isAxiosError( reason ) ) {
 				let err = <AxiosError>reason;
-				bot.logger.error( `获取B站[${ uid }]直播间状态失败, reason: ${ err.message }` );
+				bot.logger.error( `获取B站[${ uid }]直播间状态失败(axiosError), reason: ${ err.message }` );
 			} else {
 				bot.logger.error( `获取B站[${ uid }]直播间状态失败, reason:`, reason );
 			}
@@ -308,7 +337,14 @@ export const getBiliLiveStatus: ( uid: number, no_cache?: boolean, cache_time?: 
 						num: 0,
 						text_small: "",
 						text_large: ""
-					}
+					},
+					room_id: 0,
+					short_id: 0,
+					area_name: '',
+					area_v2_name: '',
+					area_v2_parent_name: '',
+					face: '',
+					tag_name: ''
 				},
 				name: uid.toString( 10 )
 			}
@@ -345,7 +381,7 @@ export async function getMoyuImg(): Promise<string> {
 			} ).catch( ( reason ): any => {
 			if ( axios.isAxiosError( reason ) ) {
 				let err = <AxiosError>reason;
-				bot.logger.error( `获取摸鱼日报失败, reason: ${ err.message }` );
+				bot.logger.error( `获取摸鱼日报失败(axiosError), reason: ${ err.message }` );
 			} else {
 				bot.logger.error( "获取摸鱼日报失败, reason:", reason );
 			}
@@ -375,7 +411,7 @@ export async function get60s(): Promise<string> {
 		"Referer": "https://hibennett.cn/?bot=SilveryStar/Adachi-BOT&plugin=hot-news&version=v1"
 	}
 	
-	return new Promise( resolve => {
+	return new Promise( ( resolve, reject ) => {
 		axios.get( api, { params: { type: 'json' }, timeout: 10000, headers } )
 			.then( response => {
 				if ( response.data.success ) {
@@ -386,7 +422,7 @@ export async function get60s(): Promise<string> {
 			} ).catch( ( reason ): any => {
 			if ( axios.isAxiosError( reason ) ) {
 				let err = <AxiosError>reason;
-				bot.logger.error( `获取60秒新闻图失败, reason: ${ err.message }` );
+				bot.logger.error( `获取60秒新闻图失败(axiosError), reason: ${ err.message }` );
 				reject( err.message );
 			} else {
 				bot.logger.error( "获取60s新闻图失败, reason:", reason );
@@ -394,4 +430,75 @@ export async function get60s(): Promise<string> {
 			}
 		} )
 	} );
+}
+
+export async function getUpInfoFromArticle( uid: number, jump_url: string ): Promise<UpCardInfo | undefined> {
+	try {
+		const result: Response = await fetch( `${ API.biliCard }?mid=${ uid }&article=true`, {
+			headers: {
+				origin: "https://www.bilibili.com",
+				referer: `https:${ jump_url }?spm_id_from=333.999.list.card_opus.click`
+			},
+			method: "GET"
+		} );
+		const data = await result.json();
+		if ( data.code === 0 ) {
+			const { follower, article_count, card: { vip: { status } } } = data.data;
+			return Promise.resolve( {
+				follower,
+				article_count,
+				vip_status: status
+			} );
+		}
+	} catch ( e ) {
+		bot.logger.error( `[hot-news] 获取UP:${ uid } 的数据失败`, e );
+	}
+}
+
+export async function getArticleHtml( jump_url: string ): Promise<string> {
+	const response: Response = await fetch( `https:${ jump_url }`, {
+		headers: {
+			"user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36"
+		}
+	} );
+	return await response.text();
+}
+
+export async function getUpStat( uid: number ): Promise<{ follower: number } | undefined> {
+	try {
+		const response: Response = await fetch( `${ API.biliStat }?vmid=${ uid }&jsonp=jsonp` );
+		const data = await response.json();
+		if ( data.code === 0 ) {
+			const { follower } = data.data;
+			return Promise.resolve( {
+				follower
+			} );
+		}
+		bot.logger.error( `[hot-news] 获取UP: ${ uid } 状态数据失败, reason: ${ data.message }` );
+	} catch ( e ) {
+		bot.logger.error( `[hot-news] 获取UP: ${ uid } 状态数据失败`, e );
+	}
+}
+
+export async function getLiveUserInfo( uid: number ): Promise<LiveUserInfo | undefined> {
+	try {
+		const response: Response = await fetch( `${ API.biliLiveUserInfo }?uid=${ uid }` );
+		const data = await response.json();
+		if ( data.code === 0 ) {
+			const {
+				exp: { master_level: { level, color } },
+				follower_num,
+				info: { official_verify: { type } }
+			} = data.data;
+			return Promise.resolve( {
+				follower_num,
+				level,
+				color,
+				official_type: type
+			} );
+		}
+		bot.logger.error( `[hot-news] 获取UP: ${ uid } 状态数据失败, reason: ${ data.message }` );
+	} catch ( e ) {
+		bot.logger.error( `[hot-news] 获取UP: ${ uid } 状态数据失败`, e );
+	}
 }

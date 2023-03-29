@@ -1,4 +1,4 @@
-import { Sendable } from "oicq";
+import { Sendable } from "icqq";
 
 export interface NewsService {
 	

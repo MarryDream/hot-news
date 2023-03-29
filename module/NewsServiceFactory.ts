@@ -3,6 +3,8 @@ import { NewsService } from "#hot-news/module/news/NewsService";
 import { CHANNEL_NAME } from "#hot-news/util/constants";
 import { MessAroundServiceImpl } from "#hot-news/module/news/impl/MessAroundServiceImpl";
 import { SixtySecondsWatchNews } from "#hot-news/module/news/impl/SixtySecondsWatchNews";
+import { BiliDynamicImpl } from "#hot-news/module/news/impl/BiliDynamicImpl";
+import { BiliLiveImpl } from "#hot-news/module/news/impl/BiliLiveImpl";
 
 export class NewsServiceFactory {
 	/**
@@ -21,6 +23,10 @@ export class NewsServiceFactory {
 				return new MessAroundServiceImpl();
 			case CHANNEL_NAME["60sNews"]:
 				return new SixtySecondsWatchNews();
+			case "biliDynamic":
+				return new BiliDynamicImpl();
+			case "biliLive":
+				return new BiliLiveImpl()
 			default:
 				throw "不支持的订阅渠道";
 		}

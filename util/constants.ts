@@ -23,6 +23,7 @@ export const DB_KEY = {
 	// 摸鱼日报图的URL缓存
 	moyu_img_url_key: 'hot_news.moyu_img_url',
 	'60s_img_url_key': 'hot_news.60s_img_url',
+	bili_dynamic_info_key: 'hot_news.bili_dynamic_info',
 }
 
 export const CHANNEL_NAME = {

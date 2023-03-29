@@ -11,6 +11,8 @@ import FileManagement from "@modules/file";
 import { ChatInfo } from "#hot-news/types/type";
 import { MemberDecreaseEvent } from "icqq";
 import { installDep } from "#hot-news/util/tools";
+import { createServer } from "#hot-news/server";
+import { findFreePort } from "@modules/utils";
 
 const subscribe_news: OrderConfig = {
 	type: "order",
@@ -183,6 +185,7 @@ function decreaseGroup( bot: BOT ): void {
 
 // 不可 default 导出，函数名固定
 export async function init( bot: BOT ): Promise<PluginSetting> {
+	const port: number = await findFreePort( 3892, bot.logger );
 	/* 加载 hot_news.yml 配置 */
 	config = loadConfig( bot.file );
 	
@@ -194,7 +197,7 @@ export async function init( bot: BOT ): Promise<PluginSetting> {
 	await scheduleNews.initAllBiliDynamic();
 	
 	/* 实例化渲染器 */
-	renderer = bot.renderer.register( "hot-news", "/", 0, "" );
+	renderer = bot.renderer.register( "hot-news", "/views", port, "#app" );
 	
 	/* 初始化杂项定时任务 */
 	scheduleNews.initSchedule();
@@ -208,6 +211,8 @@ export async function init( bot: BOT ): Promise<PluginSetting> {
 	
 	// 检测并安装依赖
 	installDep( bot ).then();
+	
+	createServer( port, bot.logger );
 	
 	return {
 		pluginName: "hot-news",

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta content="never" name="referrer">
+	<title>Dynamic</title>
+	<script src="https://unpkg.com/vue@3.1.1/dist/vue.global.prod.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+	<link href="../styles/root.css" rel="stylesheet"/>
+	<link href="../styles/qrcode.css" rel="stylesheet"/>
+	<link href="../styles/avatar.css" rel="stylesheet"/>
+	<link href="../styles/dynamic.css" rel="stylesheet"/>
+	<link href="../styles/face.css" rel="stylesheet"/>
+	<link href="../styles/article.css" rel="stylesheet"/>
+	<link href="../styles/video.css" rel="stylesheet"/>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+	import App from "../components/dynamic/index.js";
+
+	Vue.createApp(App).mount("#app");
+</script>
+</body>
+</html>
+
+<style>
+	#app {
+		width: 600px;
+	}
+
+	@font-face {
+		font-family: 'fanscard';
+		src: url('//s1.hdslb.com/bfs/static/jinkela/mall-h5/asserts/fansCard.ttf');
+	}
+
+	@font-face {
+		font-family: "wqy-microhei";
+		src: url("../public/fonts/wqy-microhei.ttc");
+	}
+
+	body, html {
+		font-family: wqy-microhei, Noto Sans SC, PingFang SC, HarmonyOS_Regular, Helvetica Neue, Helvetica, Arial, Microsoft Yahei, Hiragino Sans GB, Heiti SC, WenQuanYi Micro Hei, sans-serif;
+		background-color: #fff;
+	}
+
+	div {
+		box-sizing: border-box;
+	}
+
+	svg {
+		fill: currentColor;
+		height: 1em;
+		width: 1em;
+	}
+
+	svg:not(:root) {
+		overflow-clip-margin: content-box;
+		overflow: hidden;
+	}
+
+	img {
+		overflow-clip-margin: content-box;
+		overflow: clip;
+	}
+</style>

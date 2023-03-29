@@ -28,6 +28,33 @@ export default class NewsConfig {
 	public videoDynamicTemplate: string;
 	/** B站动态截图渲染失败的模版消息 */
 	public errorMsgTemplate: string;
+	public static init = {
+		maxSubscribeNum: 5,
+		biliDynamicScheduleRule: "0 * * * * *",
+		biliLiveScheduleRule: "0 * * * * *",
+		biliDynamicApiCacheTime: 55,
+		biliLiveApiCacheTime: 55,
+		biliScreenshotCacheTime: 55,
+		biliLiveCacheTime: 20,
+		liveTemplate: "【直播通知】\n${name}开播啦!\n标题：${title}\n在线人气：${num}\n开播时长：${liveTime}\n直播间：${url}\n${img}",
+		dynamicTemplate: "【动态通知】\n${name}发布新动态了!\n动态地址：${url}\n${img}",
+		articleDynamicTemplate: "【动态通知】\n${name}发布新动态了!\n动态地址：${url}\n ${desc}",
+		videoDynamicTemplate: "【投稿通知】\n${name}发布新的投稿视频了!\n标题：${archive.title}\n简介：${archive.desc}\n视频地址：${archive.jump_url}\n${img}",
+		errorMsgTemplate: "${name}发布新动态了\n动态地址：${url}\n\n图片渲染出错了，请自行前往B站查看最新动态。",
+		screenshotType: 1,
+		subscribeMoyu: {
+			enable: false,
+			cronRule: "0 0 9 * * *",
+			apiType: 1
+		},
+		pushLimit: {
+			enable: true,
+			limitTimes: 3,
+			limitTime: 1
+		},
+		vvhanCdn: "",
+		aliases: [ "消息订阅", "新闻订阅", "热点新闻" ]
+	};
 	/** 订阅摸鱼日报 */
 	public subscribeMoyu: {
 		enable: boolean;
@@ -42,33 +69,8 @@ export default class NewsConfig {
 	}
 	/** vvhan.com的CDN配置 */
 	public vvhanCdn: string;
-	
-	public static init = {
-		maxSubscribeNum: 5,
-		biliDynamicScheduleRule: "0 * * * * *",
-		biliLiveScheduleRule: "0 * * * * *",
-		biliDynamicApiCacheTime: 55,
-		biliLiveApiCacheTime: 55,
-		biliScreenshotCacheTime: 55,
-		biliLiveCacheTime: 20,
-		liveTemplate: "【直播通知】\n${name}开播啦!\n标题：${title}\n在线人气：${num}\n开播时长：${liveTime}\n直播间：${url}\n${img}",
-		dynamicTemplate: "【动态通知】\n${name}发布新动态了!\n动态地址：${url}\n${img}",
-		articleDynamicTemplate: "【动态通知】\n${name}发布新动态了!\n动态地址：${url}\n ${desc}",
-		videoDynamicTemplate: "【投稿通知】\n${name}发布新的投稿视频了!\n标题：${archive.title}\n简介：${archive.desc}\n视频地址：${archive.jump_url}\n${img}",
-		errorMsgTemplate: "${name}发布新动态了\n动态地址：${url}\n\n图片渲染出错了，请自行前往B站查看最新动态。",
-		subscribeMoyu: {
-			enable: false,
-			cronRule: "0 0 9 * * *",
-			apiType: 1
-		},
-		pushLimit: {
-			enable: true,
-			limitTimes: 3,
-			limitTime: 1
-		},
-		vvhanCdn: "",
-		aliases: [ "消息订阅", "新闻订阅", "热点新闻" ]
-	};
+	/** 渲染图类型：1是直接截B站图，2使用自定义带二维码的渲染图 */
+	public screenshotType: number;
 	/** 更新使用的别名 */
 	public aliases: string[];
 	
@@ -85,6 +87,7 @@ export default class NewsConfig {
 		this.articleDynamicTemplate = config.articleDynamicTemplate;
 		this.videoDynamicTemplate = config.videoDynamicTemplate;
 		this.errorMsgTemplate = config.errorMsgTemplate;
+		this.screenshotType = config.screenshotType;
 		this.subscribeMoyu = {
 			enable: config.subscribeMoyu.enable,
 			cronRule: config.subscribeMoyu.cronRule,
@@ -113,6 +116,7 @@ export default class NewsConfig {
 			this.articleDynamicTemplate = config.articleDynamicTemplate;
 			this.videoDynamicTemplate = config.videoDynamicTemplate;
 			this.errorMsgTemplate = config.errorMsgTemplate;
+			this.screenshotType = config.screenshotType;
 			this.subscribeMoyu = {
 				enable: config.subscribeMoyu.enable,
 				cronRule: config.subscribeMoyu.cronRule,

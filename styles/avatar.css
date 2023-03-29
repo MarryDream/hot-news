@@ -1,0 +1,131 @@
+img {
+	overflow-clip-margin: content-box;
+	overflow: clip;
+}
+
+.box-main {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 10px 0 20px 0;
+}
+
+.author-info {
+	height: 80px;
+	display: flex;
+	justify-content: start;
+	align-items: center;
+	flex-direction: row;
+}
+
+.user-info {
+	height: 50px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	margin: 0 10px 0 20px;
+}
+
+.nickname {
+	font-size: 20px;
+	font-weight: bolder;
+}
+
+.publish_time, .ip_info, .up_data {
+	color: rgba(0, 0, 0, .6);
+	font-size: 15px;
+}
+
+.avatar-box {
+	width: 45px;
+	height: 45px;
+	position: relative;
+}
+
+.avatar-box, .avatar-box * {
+	margin: 0;
+	padding: 0;
+}
+
+.avatar-img {
+	border-radius: 50%;
+	border: none;
+	display: block;
+	object-fit: cover;
+	image-rendering: -webkit-optimize-contrast;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 100%;
+	height: 100%;
+}
+
+.avatar-pendant-dom {
+	height: 176.48%;
+	width: 176.48%;
+	position: absolute;
+	top: -38.33%;
+	left: -38.33%;
+	overflow: hidden;
+}
+
+.avatar-pendant {
+	height: 100%;
+	min-width: 100%;
+	user-select: none;
+	border: none;
+	display: block;
+	object-fit: cover;
+	image-rendering: -webkit-optimize-contrast;
+}
+
+.author-icon {
+	width: 18px;
+	height: 18px;
+	bottom: -1px;
+	position: absolute;
+	right: 0;
+	background-size: cover;
+	image-rendering: -webkit-optimize-contrast;
+}
+
+.bili-avatar-icon-big-vip {
+	background-image: url(//s1.hdslb.com/bfs/seed/jinkela/short/user-avatar/big-vip.svg)
+}
+
+.bili-avatar-icon-business {
+	background-image: url(//s1.hdslb.com/bfs/seed/jinkela/short/user-avatar/business.svg)
+}
+
+.bili-avatar-icon-personal {
+	background-image: url(//s1.hdslb.com/bfs/seed/jinkela/short/user-avatar/personal.svg)
+}
+
+.bili-avatar-icon-small-vip {
+	background-image: url(//s1.hdslb.com/bfs/seed/jinkela/short/user-avatar/small-vip.svg)
+}
+
+.decorate-dom {
+	height: 40px;
+	width: 120px;
+	position: relative;
+	margin-right: 20px;
+}
+
+.decorate-img {
+	height: 100%;
+	width: 100%;
+}
+
+.decorate-dom span {
+	font-family: fanscard;
+	font-size: 14px;
+	position: absolute;
+	right: 43px;
+	top: 15px;
+	transform: scale(.88);
+	transform-origin: right;
+	font-weight: 400;
+	-webkit-font-smoothing: antialiased;
+}
