@@ -50,7 +50,7 @@ export default defineComponent( {
 	},
 	setup( props ) {
 		const date = new Date();
-		const aprilFoolsDay = date.getMonth() + 1 === 4 && date.getDay() === 1;
+		const aprilFoolsDay = date.getMonth() + 1 === 4 && date.getDate() === 1;
 		
 		const state = reactive( {
 			avatarImg: `${ props.face }@96w_96h_1c_1s.webp`,

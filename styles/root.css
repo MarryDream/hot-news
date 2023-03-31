@@ -659,6 +659,7 @@ html.bili_dark {
 	--text3_rgb: var(--Ga5_rgb);
 	--text4_rgb: var(--Ga3_rgb);
 	--text_link_rgb: var(--Lb6_rgb);
+	--text_white: var(--Wh0_u);
 	--text_notice_rgb: var(--Ye6_rgb);
 	--line_light_rgb: var(--Ga1_s_rgb);
 	--line_regular_rgb: var(--Ga2_rgb);

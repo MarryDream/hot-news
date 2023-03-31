@@ -93,6 +93,25 @@ const template = `<div class="dynamic-main">
 				</div>
 			</div>
 		</div>
+		
+		<div class="bili-dyn-content__orig__major suit-video-card" v-if="type === 'DYNAMIC_TYPE_LIVE_RCMD' || type === 'DYNAMIC_TYPE_LIVE'">
+			<a :href="live.link" class="bili-dyn-card-live rcmd hide-border">
+				<div class="bili-dyn-card-live__header">
+					<div class="bili-dyn-card-live__tag state--1">{{live.live_status}}</div>
+					<div class="bili-dyn-card-live__cover b-img">
+						<picture class="b-img__inner">
+							<source type="image/avif" :srcset="live.cover.avif">
+							<source type="image/webp" :srcset="live.cover.webp">
+							<img :src="live.cover.webp" alt="直播封面">
+						</picture>
+					</div>
+				</div>
+				<div class="bili-dyn-card-live__body">
+					<div class="bili-dyn-card-live__title bili-ellipsis fs-medium">{{live.title}}</div>
+					<div class="bili-dyn-card-live__desc fs-small">{{live.area_name}} · {{live.watched_show}}</div>
+				</div>
+			</a>
+		</div>
 	</div>
 <slot />
 </div>`;
@@ -119,6 +138,17 @@ export default defineComponent( {
 			},
 			majorArticle: {
 				cover: ""
+			},
+			live: {
+				title: "",
+				link: "",
+				live_status: "",
+				area_name: "",
+				watched_show: "",
+				cover: {
+					avif: "",
+					webp: ""
+				}
 			}
 		} );
 		switch ( props.type ) {
@@ -178,6 +208,33 @@ export default defineComponent( {
 				const covers = props.dynamic.major.article.covers;
 				const cover = covers && covers.length > 0 ? covers[0] : "";
 				state.majorArticle.cover = `${ cover }@2072w.webp`;
+				break;
+			case 'DYNAMIC_TYPE_LIVE_RCMD':
+				const live = JSON.parse( props.dynamic.major.live_rcmd.content );
+				state.live = {
+					title: live["live_play_info"].title,
+					link: "https:" + live["live_play_info"].link,
+					live_status: live["live_play_info"].live_status === 1 ? "直播中" : "直播已结束",
+					area_name: live["live_play_info"].area_name,
+					watched_show: live["live_play_info"].watched_show.text_large,
+					cover: {
+						avif: `${ live["live_play_info"].cover }@472w_264h_1c_!web-dynamic.avif`,
+						webp: `${ live["live_play_info"].cover }@472w_264h_1c_!web-dynamic.webp`
+					}
+				};
+				break;
+			case 'DYNAMIC_TYPE_LIVE':
+				state.live = {
+					title: props.dynamic.major.live.title,
+					link: "https:" + props.dynamic.major.live.jump_url,
+					live_status: props.dynamic.major.live.badge.text,
+					area_name: props.dynamic.major.live.desc_first,
+					watched_show: props.dynamic.major.live.desc_second,
+					cover: {
+						avif: `${ props.dynamic.major.live.cover }@472w_264h_1c_!web-dynamic.avif`,
+						webp: `${ props.dynamic.major.live.cover }@472w_264h_1c_!web-dynamic.webp`
+					}
+				};
 				break;
 		}
 		return { ...toRefs( state ) };

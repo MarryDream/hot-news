@@ -27,8 +27,7 @@ const template = `
 					<div style="display: flex; align-items: center;">
 						<span style="font-size: 18px;margin-right: 10px;font-weight: 400;">{{name}}</span>
 						<span class="live-icon">
-							<span class="live-vote"></span>
-							<span style="padding-left: 5px">直播中</span>
+							<span style="" class="live-status">直播中</span>
 						</span>
 					</div>
 					<div style="display: flex; align-items: center">
@@ -62,7 +61,7 @@ export default defineComponent( {
 	setup() {
 		const date = new Date();
 		const share_time = toHumanize( date.getTime() / 1000 | 0, 2 );
-		const aprilFoolsDay = date.getMonth() + 1 === 4 && date.getDay() === 1;
+		const aprilFoolsDay = date.getMonth() + 1 === 4 && date.getDate() === 1;
 		const state = reactive( {
 			name: "",
 			liveRoom: {},
