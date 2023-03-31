@@ -89,15 +89,15 @@
 }
 
 .live-stat {
-	width: 160px;
 	display: flex;
 	flex-direction: row;
-	justify-content: space-between;
+	justify-content: start;
 	align-items: center;
 }
 
 .live-stat span {
 	color: rgba(0, 0, 0, .6);
+	margin-right: 10px;
 }
 
 .live-desc-info {
