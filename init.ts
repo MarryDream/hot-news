@@ -80,6 +80,30 @@ const remove_subscribe: OrderConfig = {
 	detail: "该指令用户移除某个群的所有新闻和B站订阅"
 };
 
+const set_at_all: OrderConfig = {
+	type: "order",
+	cmdKey: "hot-news.set_at_all",
+	desc: [ "设置允许@全体的UP", "[UID]" ],
+	headers: [ "sat" ],
+	regexps: [ "\\d+" ],
+	scope: MessageScope.Group,
+	auth: AuthLevel.User,
+	main: "achieves/set_at_all",
+	detail: "该指令用于设置允许在直播推送时@全体的UP"
+};
+
+const unset_at_all: OrderConfig = {
+	type: "order",
+	cmdKey: "hot-news.unset_at_all",
+	desc: [ "移除允许@全体的UP", "[UID]" ],
+	headers: [ "unsat" ],
+	regexps: [ "\\d+" ],
+	scope: MessageScope.Group,
+	auth: AuthLevel.User,
+	main: "achieves/unset_at_all",
+	detail: "该指令用于移除允许在直播推送时@全体的UP。"
+};
+
 export let renderer: Renderer;
 export let config: NewsConfig;
 export let scheduleNews: ScheduleNews;
@@ -217,7 +241,8 @@ export async function init( bot: BOT ): Promise<PluginSetting> {
 	return {
 		pluginName: "hot-news",
 		aliases: config.aliases,
-		cfgList: [ subscribe_news, unsubscribe_news, limit_genshin_dynamic_notify, my_subscribe_list, remove_subscribe ],
+		cfgList: [ subscribe_news, unsubscribe_news, limit_genshin_dynamic_notify
+			, my_subscribe_list, remove_subscribe, set_at_all, unset_at_all ],
 		repo: {
 			owner: "BennettChina",
 			repoName: "hot-news",

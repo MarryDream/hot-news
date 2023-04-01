@@ -572,6 +572,7 @@ export interface LiveUserInfo {
 	level: number;
 	official_type: number;
 	color: number;
+	uname: string;
 }
 
 export interface UpCardInfo {

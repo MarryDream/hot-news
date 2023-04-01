@@ -120,16 +120,21 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 			}
 			
 			const { items }: { items: BiliDynamicCard[] } = data.data;
-			const reg = new RegExp( /恭喜.*中奖/ );
-			// 无法显示消息、开奖消息、历史消息过滤掉
-			let filter_items = items.filter( c => !dynamicIdList.includes( c.id_str )
-				&& c.visible
-				&& !reg.test( c.modules.module_dynamic.desc?.text || "" ) );
-			
-			// 把开奖消息ID保存，避免后续查询因为触发反爬虫导致又被推送
-			items.filter( c => !dynamicIdList.includes( c.id_str ) && c.visible && reg.test( c.modules.module_dynamic.desc?.text || "" ) ).forEach( value => {
-				bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, value.id_str );
-			} );
+			let filter_items: BiliDynamicCard[];
+			// 无法显示消息、历史消息、以及自定义过滤内容过滤掉
+			if ( config.filterContent ) {
+				const reg = new RegExp( config.filterContent );
+				filter_items = items.filter( c => !dynamicIdList.includes( c.id_str )
+					&& c.visible
+					&& !reg.test( c.modules.module_dynamic.desc?.text || "" ) );
+				
+				// 把开奖消息ID保存，避免后续查询因为触发反爬虫导致又被推送
+				items.filter( c => !dynamicIdList.includes( c.id_str ) && c.visible && reg.test( c.modules.module_dynamic.desc?.text || "" ) ).forEach( value => {
+					bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, value.id_str );
+				} );
+			} else {
+				filter_items = items.filter( c => !dynamicIdList.includes( c.id_str ) && c.visible );
+			}
 			
 			if ( filter_items.length > 0 ) {
 				resolve( filter_items );
@@ -488,13 +493,14 @@ export async function getLiveUserInfo( uid: number ): Promise<LiveUserInfo | und
 			const {
 				exp: { master_level: { level, color } },
 				follower_num,
-				info: { official_verify: { type } }
+				info: { official_verify: { type }, uname }
 			} = data.data;
 			return Promise.resolve( {
 				follower_num,
 				level,
 				color,
-				official_type: type
+				official_type: type,
+				uname
 			} );
 		}
 		bot.logger.error( `[hot-news] 获取UP: ${ uid } 状态数据失败, reason: ${ data.message }` );

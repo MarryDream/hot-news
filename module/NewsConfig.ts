@@ -53,7 +53,8 @@ export default class NewsConfig {
 			limitTime: 1
 		},
 		vvhanCdn: "",
-		aliases: [ "消息订阅", "新闻订阅", "热点新闻" ]
+		aliases: [ "消息订阅", "新闻订阅", "热点新闻" ],
+		filterContent: "恭喜.*中奖"
 	};
 	/** 订阅摸鱼日报 */
 	public subscribeMoyu: {
@@ -73,6 +74,8 @@ export default class NewsConfig {
 	public screenshotType: number;
 	/** 更新使用的别名 */
 	public aliases: string[];
+	/** 需要被过滤的动态内容(正则表达式) */
+	public filterContent: string;
 	
 	constructor( config: any ) {
 		this.maxSubscribeNum = config.maxSubscribeNum;
@@ -100,6 +103,7 @@ export default class NewsConfig {
 		};
 		this.vvhanCdn = config.vvhanCdn;
 		this.aliases = config.aliases;
+		this.filterContent = config.filterContent;
 	}
 	
 	public async refresh( config ): Promise<string> {
@@ -128,6 +132,7 @@ export default class NewsConfig {
 				limitTime: config.pushLimit.limitTime,
 			};
 			this.vvhanCdn = config.vvhanCdn;
+			this.filterContent = config.filterContent;
 			for ( let alias of this.aliases ) {
 				delete PluginAlias[alias];
 			}

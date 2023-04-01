@@ -9,6 +9,7 @@ import { RenderResult } from "@modules/renderer";
 import { config, renderer } from "#hot-news/init";
 import { MessageMethod } from "#hot-news/module/message/MessageMethod";
 import bot from "ROOT";
+import { MessageType } from "@modules/message";
 
 export class BiliLiveImpl implements NewsService {
 	async getInfo( channel?: string ): Promise<Sendable> {
@@ -59,7 +60,12 @@ export class BiliLiveImpl implements NewsService {
 						liveTime
 					}
 					const msg: Sendable = MessageMethod.parseTemplate( config.liveTemplate, params );
-					await MessageMethod.sendMsg( chatInfo.type, chatInfo.targetId, msg );
+					let userID: number | "all" | string = -1;
+					if ( chatInfo.type === MessageType.Group ) {
+						const key = `${ DB_KEY.notify_at_all_up_key }${ chatInfo.targetId }`;
+						userID = await bot.redis.existListElement( key, uid ) ? "all" : -1;
+					}
+					await MessageMethod.sendMsg( chatInfo.type, chatInfo.targetId, msg, userID );
 					await bot.redis.setString( `${ DB_KEY.bili_live_notified }.${ chatInfo.targetId }.${ uid }`, JSON.stringify( live ), cacheTime );
 					i++;
 				} else if ( notification_status && ( live?.liveRoom?.liveStatus === 0 || live.liveRoom?.liveStatus === 2 ) ) {

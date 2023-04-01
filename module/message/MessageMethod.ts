@@ -5,14 +5,14 @@ import { AuthLevel } from "@modules/management/auth";
 import { Sendable } from "icqq";
 
 export class MessageMethod {
-	static async sendMsg( type: number, targetId: number, msg: Sendable ) {
+	static async sendMsg( type: number, targetId: number, msg: Sendable, userID: number | "all" | string = -1 ) {
 		if ( type === MessageType.Private ) {
 			const sendMessage = bot.message.getSendMessageFunc( targetId, MessageType.Private );
 			await sendMessage( msg );
 		} else {
-			const sendMessage = bot.message.getSendMessageFunc( -1, MessageType.Group, targetId );
+			const sendMessage = bot.message.getSendMessageFunc( userID, MessageType.Group, targetId );
 			try {
-				await sendMessage( msg, false );
+				await sendMessage( msg, userID === "all" );
 			} catch ( e ) {
 				const REMOVE = <Order>bot.command.getSingle( "hot-news.remove_subscribe", AuthLevel.Master );
 				const message = `[${ targetId }]的订阅消息发送失败，该群可能被封禁中，可使用${ REMOVE.getHeaders()[0] }指令移除该群聊的订阅`;

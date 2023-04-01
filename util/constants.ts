@@ -24,6 +24,8 @@ export const DB_KEY = {
 	moyu_img_url_key: 'hot_news.moyu_img_url',
 	'60s_img_url_key': 'hot_news.60s_img_url',
 	bili_dynamic_info_key: 'hot_news.bili_dynamic_info',
+	// 允许推送时@全体的UP
+	notify_at_all_up_key: "hot_news.notify_at_all_up."
 }
 
 export const CHANNEL_NAME = {
