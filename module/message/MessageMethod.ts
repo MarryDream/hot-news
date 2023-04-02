@@ -2,7 +2,8 @@ import bot from "ROOT";
 import { MessageType } from "@modules/message";
 import { Order } from "@modules/command";
 import { AuthLevel } from "@modules/management/auth";
-import { Sendable } from "icqq";
+import * as sdk from "icqq";
+import { segment, Sendable } from "icqq";
 
 export class MessageMethod {
 	static async sendMsg( type: number, targetId: number, msg: Sendable, userID: number | "all" | string = -1 ) {
@@ -11,6 +12,18 @@ export class MessageMethod {
 			await sendMessage( msg );
 		} else {
 			const sendMessage = bot.message.getSendMessageFunc( userID, MessageType.Group, targetId );
+			const number = await bot.client.pickGroup( targetId ).getAtAllRemainder();
+			if ( !bot.config.atUser && userID === 'all' && number > 0 ) {
+				const at = segment.at( "all" );
+				if ( typeof msg === "string" ) {
+					const split = msg.length < 60 ? " " : "\n";
+					msg = [ at, split, msg ];
+				} else if ( this.checkIterator( msg ) ) {
+					msg = [ at, " ", ...msg ];
+				} else {
+					msg = [ at, " ", msg ];
+				}
+			}
 			try {
 				await sendMessage( msg, userID === "all" );
 			} catch ( e ) {
@@ -20,6 +33,10 @@ export class MessageMethod {
 				await bot.message.sendMaster( message );
 			}
 		}
+	}
+	
+	private static checkIterator( obj: sdk.MessageElem | Iterable<sdk.MessageElem | string> ): obj is Iterable<sdk.MessageElem | string> {
+		return typeof obj[Symbol.iterator] === "function";
 	}
 	
 	static parseTemplate( template: string, params: Record<string, any> ): Sendable {
