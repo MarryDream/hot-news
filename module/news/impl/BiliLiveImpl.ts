@@ -10,8 +10,15 @@ import { config, renderer } from "#hot-news/init";
 import { MessageMethod } from "#hot-news/module/message/MessageMethod";
 import bot from "ROOT";
 import { MessageType } from "@modules/message";
+import puppeteer from "puppeteer";
 
 export class BiliLiveImpl implements NewsService {
+	private readonly viewPort: puppeteer.Viewport = {
+		width: 2000,
+		height: 1000,
+		deviceScaleFactor: 3
+	}
+	
 	async getInfo( channel?: string ): Promise<Sendable> {
 		return "";
 	}
@@ -41,7 +48,8 @@ export class BiliLiveImpl implements NewsService {
 					if ( config.screenshotType === 2 ) {
 						const res: RenderResult = await renderer.asSegment(
 							"/live.html",
-							{ uid: uid }
+							{ uid: uid },
+							this.viewPort
 						);
 						if ( res.code === "ok" ) {
 							img = <ImageElem>res.data;

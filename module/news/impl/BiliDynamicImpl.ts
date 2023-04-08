@@ -21,7 +21,8 @@ import puppeteer from "puppeteer";
 export class BiliDynamicImpl implements NewsService {
 	private readonly viewPort: puppeteer.Viewport = {
 		width: 2000,
-		height: 1000
+		height: 1000,
+		deviceScaleFactor: 2
 	}
 	
 	async getInfo( channel?: string ): Promise<Sendable> {
@@ -167,7 +168,8 @@ export class BiliDynamicImpl implements NewsService {
 		} else if ( config.screenshotType === 2 ) {
 			const res: RenderResult = await renderer.asSegment(
 				"/dynamic.html",
-				{ dynamicId: card.id_str }
+				{ dynamicId: card.id_str },
+				this.viewPort
 			);
 			if ( res.code === "ok" ) {
 				imgMsg = res.data;
@@ -218,7 +220,8 @@ export class BiliDynamicImpl implements NewsService {
 		if ( config.screenshotType === 2 ) {
 			const res: RenderResult = await renderer.asSegment(
 				"/dynamic.html",
-				{ dynamicId: id }
+				{ dynamicId: id },
+				this.viewPort
 			);
 			if ( res.code === "ok" ) {
 				img = res.data;
