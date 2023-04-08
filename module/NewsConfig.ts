@@ -1,7 +1,5 @@
 import { RefreshCatch } from "@modules/management/refresh";
 import { PluginAlias } from "@modules/plugin";
-import { installDep } from "#hot-news/util/tools";
-import bot from "ROOT";
 
 export default class NewsConfig {
 	/** 用户的最大订阅数量 */
@@ -140,7 +138,6 @@ export default class NewsConfig {
 			for ( let alias of this.aliases ) {
 				PluginAlias[alias] = "hot-news";
 			}
-			installDep( bot ).then();
 			return "hot_news.yml 重新加载完毕";
 		} catch ( error ) {
 			throw <RefreshCatch>{

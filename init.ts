@@ -10,7 +10,6 @@ import NewsConfig from "#hot-news/module/NewsConfig";
 import FileManagement from "@modules/file";
 import { ChatInfo } from "#hot-news/types/type";
 import { MemberDecreaseEvent } from "icqq";
-import { installDep } from "#hot-news/util/tools";
 import { createServer } from "#hot-news/server";
 import { findFreePort } from "@modules/utils";
 
@@ -232,9 +231,6 @@ export async function init( bot: BOT ): Promise<PluginSetting> {
 	
 	bot.refresh.registerRefreshableFile( "hot_news", config );
 	bot.refresh.registerRefreshableFunc( scheduleNews );
-	
-	// 检测并安装依赖
-	installDep( bot ).then();
 	
 	createServer( port, bot.logger );
 	
