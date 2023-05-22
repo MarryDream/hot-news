@@ -24,13 +24,14 @@ export class MessageMethod {
 					msg = [ at, " ", msg ];
 				}
 			}
+			let message_id: string | undefined;
 			try {
-				await sendMessage( msg, userID === "all" );
+				const ret = await sendMessage( msg, userID === "all" );
+				message_id = ret.message_id;
 			} catch ( e ) {
 				const REMOVE = <Order>bot.command.getSingle( "hot-news.remove_subscribe", AuthLevel.Master );
-				const message = `[${ targetId }]的订阅消息发送失败，该群可能被封禁中，可使用${ REMOVE.getHeaders()[0] }指令移除该群聊的订阅`;
-				bot.logger.error( message, e );
-				await bot.message.sendMaster( message );
+				const message = `[${ targetId }]的订阅消息发送时报错，${ message_id ? "消息已成功发送。" : `该群可能被封禁中，可使用${ REMOVE.getHeaders()[0] }指令移除该群聊的订阅` }`;
+				bot.logger.warn( message, e );
 			}
 		}
 	}

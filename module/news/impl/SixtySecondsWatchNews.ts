@@ -43,7 +43,7 @@ export class SixtySecondsWatchNews implements NewsService {
 			channel = channel.startsWith( "[" ) ? channel : `["${ channel }"]`;
 			const channels: string[] = JSON.parse( channel ) || "[]";
 			if ( channels.includes( "60sNews" ) ) {
-				bot.logger.info( `[hot-news] - [${ targetId }] - 获取到60s新闻图: ${ msg }` );
+				bot.logger.info( `[hot-news] - [${ targetId }] - 获取到60s新闻图: `, msg );
 				await MessageMethod.sendMsg( type, targetId, msg );
 				i++;
 				if ( config.pushLimit.enable && i > config.pushLimit.limitTimes ) {

@@ -32,7 +32,7 @@ export class MessAroundServiceImpl implements NewsService {
 		}
 		
 		const msg = await this.getInfo();
-		bot.logger.info( `[hot-news]获取到今日摸鱼日报: ${ msg }` );
+		bot.logger.info( `[hot-news]获取到今日摸鱼日报: `, msg );
 		let i = 0;
 		for ( let id of set ) {
 			const { type, targetId }: ChatInfo = JSON.parse( id );
