@@ -267,6 +267,8 @@ filterContent: "恭喜.*中奖"
 
 ## 更新日志
 
+[CHANGELOG](https://github.com/BennettChina/hot-news/blob/main/CHANGELOG.md)
+
 ## 感谢
 
 - 感谢 [AnyKnew](https://www.anyknew.com/#/) 站长提供的API
