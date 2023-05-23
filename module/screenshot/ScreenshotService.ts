@@ -1,4 +1,5 @@
 import puppeteer from "puppeteer";
+import bot from "ROOT";
 
 export class ScreenshotService {
 	
@@ -8,7 +9,18 @@ export class ScreenshotService {
 	 */
 	public static async normalDynamicPageFunction( page: puppeteer.Page ): Promise<Buffer | string | void> {
 		// 把头部信息以及可能出现的未登录弹框删掉
+		const content = await page.content();
+		// 判断网页内容是否被重定向至新版动态，如果是则按新版动态处理
+		const url = page.url();
+		if ( content.includes( "opus-detail" ) ) {
+			bot.logger.info( `${ url }, 按新版B站动态[opus]处理截图` )
+			await page.$eval( "#bili-header-container", element => element.remove() );
+			const detail = await page.waitForSelector( ".bili-opus-view" );
+			return detail?.screenshot( { encoding: "base64" } );
+		}
 		await page.$eval( "#internationalHeader", element => element.remove() );
+		// 把未登录的弹框节点删掉
+		await page.$eval( ".unlogin-popover", element => element.remove() );
 		let card = await page.waitForSelector( ".card" );
 		let clip = await card?.boundingBox();
 		let bar = await page.waitForSelector( ".bili-dyn-item__footer" )
