@@ -114,10 +114,11 @@ export class BiliDynamicImpl implements NewsService {
 				
 				// 把新的动态ID加入本地数据库
 				await bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, card.id_str );
-				if ( config.pushLimit.enable && i > config.pushLimit.limitTimes ) {
-					await wait( config.pushLimit.limitTime * 1000 );
-					i = 0;
-				}
+			}
+			
+			if ( config.pushLimit.enable && i > config.pushLimit.limitTimes ) {
+				await wait( config.pushLimit.limitTime * 1000 );
+				i = 0;
 			}
 		}
 	}
@@ -159,13 +160,8 @@ export class BiliDynamicImpl implements NewsService {
 		const msg: Sendable = MessageMethod.parseTemplate( config.articleDynamicTemplate, params );
 		await MessageMethod.sendMsg( type, targetId, msg );
 		
-		// 检测是否图片消息是否已经缓存
-		let imgMsg: Sendable = await bot.redis.getString( `${ DB_KEY.img_msg_key }.${ card.id_str }` );
-		if ( imgMsg ) {
-			bot.logger.info( `[hot-news] 检测到动态[${ card.id_str }]渲染图的缓存，不再渲染新图，直接使用缓存内容.` )
-			await MessageMethod.sendMsg( type, targetId, JSON.parse( imgMsg ) );
-			return;
-		} else if ( config.screenshotType === 2 ) {
+		let imgMsg: Sendable;
+		if ( config.screenshotType === 2 ) {
 			const res: RenderResult = await renderer.asSegment(
 				"/dynamic.html",
 				{ dynamicId: card.id_str },
@@ -182,13 +178,13 @@ export class BiliDynamicImpl implements NewsService {
 			const res = await renderer.asForFunction( url, ScreenshotService.articleDynamicPageFunction, this.viewPort );
 			if ( res.code === 'ok' ) {
 				imgMsg = segment.image( this.completeProtocol( <string>res.data ) );
-				await bot.redis.setString( `${ DB_KEY.img_msg_key }.${ card.id_str }`, JSON.stringify( imgMsg ), config.biliScreenshotCacheTime );
 			} else {
 				bot.logger.error( res.error );
 				imgMsg = MessageMethod.parseTemplate( config.errorMsgTemplate, params );
 			}
 		}
 		await MessageMethod.sendMsg( type, targetId, imgMsg );
+		await wait( 1500 );
 	}
 	
 	private async normalDynamicHandle( {
@@ -205,14 +201,6 @@ export class BiliDynamicImpl implements NewsService {
 		                                   type,
 		                                   targetId
 	                                   }: ChatInfo ): Promise<void> {
-		// 检测是否图片消息是否已经缓存
-		const msg: string = await bot.redis.getString( `${ DB_KEY.img_msg_key }.${ id }` );
-		if ( msg ) {
-			bot.logger.info( `[hot-news] 检测到动态[${ id }]渲染图的缓存，不再渲染新图，直接使用缓存内容.` )
-			await MessageMethod.sendMsg( type, targetId, JSON.parse( msg ) );
-			return;
-		}
-		
 		let message: Sendable;
 		const url = `https://t.bilibili.com/${ id }`;
 		let img: Sendable = "";
@@ -272,7 +260,6 @@ export class BiliDynamicImpl implements NewsService {
 				}
 				message = MessageMethod.parseTemplate( config.dynamicTemplate, params );
 			}
-			await bot.redis.setString( `${ DB_KEY.img_msg_key }.${ id }`, JSON.stringify( message ), config.biliScreenshotCacheTime );
 		} else {
 			const params: Record<string, any> = {
 				id,
@@ -288,6 +275,7 @@ export class BiliDynamicImpl implements NewsService {
 			message = MessageMethod.parseTemplate( config.errorMsgTemplate, params );
 		}
 		await MessageMethod.sendMsg( type, targetId, message );
+		await wait( 1500 );
 	}
 	
 	private completeProtocol( base64Str: string ): string {

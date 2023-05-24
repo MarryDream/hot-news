@@ -48,7 +48,7 @@ export default class NewsConfig {
 		pushLimit: {
 			enable: true,
 			limitTimes: 3,
-			limitTime: 1
+			limitTime: 2
 		},
 		vvhanCdn: "",
 		aliases: [ "消息订阅", "新闻订阅", "热点新闻" ],

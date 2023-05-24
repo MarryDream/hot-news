@@ -107,8 +107,9 @@ img {
 }
 
 .decorate-dom {
-	height: 40px;
-	width: 120px;
+	/*宽高是原版的1.5倍*/
+	height: 51px;
+	width: 90px;
 	position: relative;
 	margin-right: 20px;
 }

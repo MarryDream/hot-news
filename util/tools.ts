@@ -5,6 +5,7 @@ import { exec } from "child_process";
 import FileManagement from "@modules/file";
 import { BOT } from "@modules/bot";
 import { config } from "#hot-news/init";
+import bot from "ROOT";
 
 export const formatDate: ( date: Date, format?: string ) => string = ( date, format = "-" ) => {
 	const dateArr: number[] = [ date.getFullYear(), date.getMonth() + 1, date.getDate() ];
@@ -106,4 +107,36 @@ export async function installDep( { logger, file }: BOT ): Promise<void> {
 		logger.info( stdout );
 	}
 	logger.info( "[hot-news] 所有插件需要的依赖已安装" );
+}
+
+
+export function getVersion(): string {
+	const path: string = bot.file.getFilePath( "package.json", "root" );
+	const { version } = require( path );
+	return version.split( "-" )[0];
+}
+
+/**
+ * 比较两个版本号
+ * @param v1
+ * @param v2
+ * @return 0,1,-1
+ */
+export function version_compare( v1, v2 ): number {
+	//将两个版本号拆成数组
+	const arr1 = v1.split( '.' ),
+		arr2 = v2.split( '.' );
+	const minLength = Math.min( arr1.length, arr2.length );
+	//依次比较版本号每一位大小
+	for ( let i = 0; i < minLength; i++ ) {
+		if ( parseInt( arr1[i] ) != parseInt( arr2[i] ) ) {
+			return ( parseInt( arr1[i] ) > parseInt( arr2[i] ) ) ? 1 : -1;
+		}
+	}
+	// 若前几位分隔相同，则按分隔数比较。
+	if ( arr1.length == arr2.length ) {
+		return 0;
+	} else {
+		return ( arr1.length > arr2.length ) ? 1 : -1;
+	}
 }

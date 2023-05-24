@@ -35,17 +35,18 @@ const NEWS_HEADERS = {
 const BILIBILI_DYNAMIC_HEADERS = {
 	"Origin": "https://space.bilibili.com",
 	"Referer": "https://space.bilibili.com/$/dynamic",
-	"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36",
+	"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36",
 	"Accept": "application/json",
 	"Connection": "keep-alive",
 	"dnt": "1",
-	"sec-ch-ua": '"Google Chrome";v="105", "Not)A;Brand";v="8", "Chromium";v="105"',
+	"sec-ch-ua": '"Google Chrome";v="113", "Chromium";v="113", "Not-A.Brand";v="24"',
 	"sec-ch-ua-mobile": "?0",
 	"sec-ch-ua-platform": "macOS",
 	"sec-fetch-dest": "empty",
 	"sec-fetch-mode": "cors",
 	"sec-fetch-site": "same-site",
 	"sec-gpc": "1",
+	"Cookie": "buvid3=B5E01E8E-B409-B55C-9272-FAB06D296DF702893infoc; b_nut=1684924002; b_lsid=8D5C79EA_1884D4BF359; _uuid=4AF6F1018-AF3A-F6B7-D7BF-D727FAF6139903172infoc; buvid4=089966E0-FEA4-97DF-3408-5E48096DA8BF03498-023052418-dgxPV9wC5CBc/cvu8g4chQ%3D%3D; buvid_fp=5297465754747ebfb0ec68539bc5b225"
 }
 
 export const getNews: ( channel?: string ) => Promise<string> = async ( channel: string = 'toutiao' ) => {
@@ -107,7 +108,8 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 			params: {
 				offset: '',
 				host_mid: uid,
-				timezone_offset: -480
+				timezone_offset: -480,
+				features: "itemOpusStyle"
 			},
 			timeout: 5000,
 			headers: BILIBILI_DYNAMIC_HEADERS
