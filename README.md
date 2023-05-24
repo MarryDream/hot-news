@@ -145,7 +145,7 @@ pushLimit:
     # 次数限制，即每推送几个用户后延迟推送后续消息
     limitTimes: 3
     # 延迟的时间(单位：秒)
-    limitTime: 1
+    limitTime: 2
 # 韩小韩API的CDN（由于该站长未开启海外IP的可用，因此需要自行部署CDN来代理他的API，没有域名的可以使用我为你们提供的CDN）
 vvhanCdn: "https://vvhan.hibennett.cn"
 aliases:
@@ -264,6 +264,11 @@ filterContent: "恭喜.*中奖"
 ```
 
 </details>
+
+## 自定义字体
+
+目前支持自定义字体，可通过**覆盖**本插件的 `public/fonts` 目录下的字体文件实现，强烈建议使用 `woff2` 或者 `woff`
+格式的压缩字体，可以在[字体转换器](https://fontconverter.com/zh/)站点进行字体的转换。
 
 ## 更新日志
 
