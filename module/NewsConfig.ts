@@ -52,7 +52,8 @@ export default class NewsConfig {
 		},
 		vvhanCdn: "",
 		aliases: [ "消息订阅", "新闻订阅", "热点新闻" ],
-		filterContent: "恭喜.*中奖"
+		filterContent: "恭喜.*中奖",
+		filterDynamicType: []
 	};
 	/** 订阅摸鱼日报 */
 	public subscribeMoyu: {
@@ -74,6 +75,10 @@ export default class NewsConfig {
 	public aliases: string[];
 	/** 需要被过滤的动态内容(正则表达式) */
 	public filterContent: string;
+	/**
+	 * 按照动态类型进行过滤
+	 */
+	public filterDynamicType: string[];
 	
 	constructor( config: any ) {
 		this.maxSubscribeNum = config.maxSubscribeNum;
@@ -102,6 +107,7 @@ export default class NewsConfig {
 		this.vvhanCdn = config.vvhanCdn;
 		this.aliases = config.aliases;
 		this.filterContent = config.filterContent;
+		this.filterDynamicType = config.filterDynamicType;
 	}
 	
 	public async refresh( config ): Promise<string> {
@@ -131,6 +137,7 @@ export default class NewsConfig {
 			};
 			this.vvhanCdn = config.vvhanCdn;
 			this.filterContent = config.filterContent;
+			this.filterDynamicType = config.filterDynamicType;
 			for ( let alias of this.aliases ) {
 				delete PluginAlias[alias];
 			}

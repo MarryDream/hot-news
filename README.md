@@ -154,6 +154,8 @@ aliases:
     - 热点新闻
 # 过滤动态内容的正则，不需要过滤则设置为空
 filterContent: "恭喜.*中奖"
+# 按照动态类型进行过滤，可用类型参考下文
+filterDynamicType: [ ]
 ```
 
 ### 模版消息配置
@@ -262,6 +264,39 @@ filterContent: "恭喜.*中奖"
     type: number;
 }
 ```
+
+</details>
+
+### 动态类型
+
+<details>
+
+<summary>展开...</summary>
+
+| 动态类型                          | 描述            |
+|-------------------------------|---------------|
+| DYNAMIC_TYPE_ARTICLE          | 专栏类型          |
+| DYNAMIC_TYPE_AV               | 投稿视频类型        |
+| DYNAMIC_TYPE_DRAW             | 文字+图片类型       |
+| DYNAMIC_TYPE_FORWARD          | 转发动态          |
+| DYNAMIC_TYPE_LIVE_RCMD        | 直播推送动态        |
+| DYNAMIC_TYPE_LIVE             | 直播间分享         |
+| DYNAMIC_TYPE_WORD             | 纯文字动态         |
+| DYNAMIC_TYPE_PGC              | 剧集（番剧、电影、纪录片） |
+| DYNAMIC_TYPE_COURSES          |               |
+| DYNAMIC_TYPE_MUSIC            | 音乐            |
+| DYNAMIC_TYPE_COMMON_SQUARE    | 装扮            |
+| DYNAMIC_TYPE_COMMON_VERTICAL  |               |
+| DYNAMIC_TYPE_MEDIALIST        | 收藏夹           |
+| DYNAMIC_TYPE_COURSES_SEASON   | 课程            |
+| DYNAMIC_TYPE_COURSES_BATCH    |               |
+| DYNAMIC_TYPE_AD               |               |
+| DYNAMIC_TYPE_APPLET           |               |
+| DYNAMIC_TYPE_SUBSCRIPTION     |               |
+| DYNAMIC_TYPE_BANNER           |               |
+| DYNAMIC_TYPE_UGC_SEASON       | 合集更新          |
+| DYNAMIC_TYPE_SUBSCRIPTION_NEW |               |
+| DYNAMIC_TYPE_NONE             | 无效动态          |
 
 </details>
 

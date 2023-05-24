@@ -126,16 +126,24 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 			// 无法显示消息、历史消息、以及自定义过滤内容过滤掉
 			if ( config.filterContent ) {
 				const reg = new RegExp( config.filterContent );
-				filter_items = items.filter( c => !dynamicIdList.includes( c.id_str )
-					&& c.visible
-					&& !reg.test( c.modules.module_dynamic.desc?.text || "" ) );
+				filter_items = items
+					.filter( card => !config.filterDynamicType.includes( card.type ) )
+					.filter( c => !dynamicIdList.includes( c.id_str )
+						&& c.visible
+						&& !reg.test( c.modules.module_dynamic.desc?.text || "" ) );
 				
-				// 把开奖消息ID保存，避免后续查询因为触发反爬虫导致又被推送
-				items.filter( c => !dynamicIdList.includes( c.id_str ) && c.visible && reg.test( c.modules.module_dynamic.desc?.text || "" ) ).forEach( value => {
+				// 把过滤掉的消息ID保存，避免后续查询因为触发反爬虫导致又被推送
+				items.filter( c => !dynamicIdList.includes( c.id_str )
+					&& c.visible
+					&& ( reg.test( c.modules.module_dynamic.desc?.text || "" )
+						|| config.filterDynamicType.includes( c.type ) ) ).forEach( value => {
+					const rule_filter_content = reg.test( value.modules.module_dynamic.desc?.text || "" );
+					bot.logger.info( "保存已过滤的消息: ", value.id_str, "触发的规则是：", rule_filter_content ? `${ config.filterContent }` : config.filterDynamicType );
 					bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, value.id_str );
 				} );
 			} else {
-				filter_items = items.filter( c => !dynamicIdList.includes( c.id_str ) && c.visible );
+				filter_items = items.filter( card => !config.filterDynamicType.includes( card.type ) )
+					.filter( c => !dynamicIdList.includes( c.id_str ) && c.visible );
 			}
 			
 			if ( filter_items.length > 0 ) {
