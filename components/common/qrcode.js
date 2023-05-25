@@ -11,7 +11,7 @@ const template = `<div class="qrcode_main">
 </div>
 </div>`
 
-import { toHumanize } from "../../public/js/utils";
+import { toHumanize } from "../../public/js/utils.js";
 
 const { defineComponent, ref, onMounted } = Vue;
 

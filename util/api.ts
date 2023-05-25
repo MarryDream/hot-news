@@ -2,7 +2,14 @@ import axios, { AxiosError } from "axios";
 import bot from 'ROOT';
 import { formatDate } from "#hot-news/util/tools";
 import { DB_KEY } from "#hot-news/util/constants";
-import { BiliDynamicCard, BiliLiveInfo, LiveUserInfo, News, UpCardInfo } from "#hot-news/types/type";
+import {
+	BiliDynamicCard,
+	BiliDynamicForwardCard,
+	BiliLiveInfo,
+	LiveUserInfo,
+	News,
+	UpCardInfo
+} from "#hot-news/types/type";
 import moment from "moment";
 import { config } from "#hot-news/init";
 import fetch from "node-fetch";
@@ -103,6 +110,7 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 	const dynamicIdList: string[] = await bot.redis.getSet( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }` );
 	
 	BILIBILI_DYNAMIC_HEADERS.Referer = BILIBILI_DYNAMIC_HEADERS.Referer.replace( "$", uid.toString( 10 ) );
+	BILIBILI_DYNAMIC_HEADERS.Cookie = config.cookie;
 	return new Promise( ( resolve ) => {
 		axios.get( API.biliDynamic, {
 			params: {
@@ -124,27 +132,56 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 			const { items }: { items: BiliDynamicCard[] } = data.data;
 			let filter_items: BiliDynamicCard[];
 			// 无法显示消息、历史消息、以及自定义过滤内容过滤掉
-			if ( config.filterContent ) {
-				const reg = new RegExp( config.filterContent );
-				filter_items = items
-					.filter( card => !config.filterDynamicType.includes( card.type ) )
-					.filter( c => !dynamicIdList.includes( c.id_str )
-						&& c.visible
-						&& !reg.test( c.modules.module_dynamic.desc?.text || "" ) );
-				
-				// 把过滤掉的消息ID保存，避免后续查询因为触发反爬虫导致又被推送
-				items.filter( c => !dynamicIdList.includes( c.id_str )
-					&& c.visible
-					&& ( reg.test( c.modules.module_dynamic.desc?.text || "" )
-						|| config.filterDynamicType.includes( c.type ) ) ).forEach( value => {
-					const rule_filter_content = reg.test( value.modules.module_dynamic.desc?.text || "" );
-					bot.logger.info( "保存已过滤的消息: ", value.id_str, "触发的规则是：", rule_filter_content ? `${ config.filterContent }` : config.filterDynamicType );
-					bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, value.id_str );
+			const filterDynamicType = config.filterDynamicType;
+			const reg = new RegExp( config.filterContent );
+			filter_items = items
+				// 过滤已缓存的ID
+				.filter( c => !dynamicIdList.includes( c.id_str ) && c.visible )
+				// 过滤全部类型动态的文字内容
+				.filter( c => {
+					return config.filterContent ? !new RegExp( config.filterContent ).test( c.modules.module_dynamic.desc?.text || "" ) : true;
+				} )
+				// 按动态类型进行不同的匹配方式(主要处理转发类型)
+				.filter( card => {
+					if ( filterDynamicType.length === 0 ) {
+						return true;
+					}
+					for ( let value of filterDynamicType ) {
+						let result: boolean = true;
+						// 转发动态去匹配原动态内容及tag
+						if ( card.type === value.type && value.type === 'DYNAMIC_TYPE_FORWARD' ) {
+							const forwardCard = <BiliDynamicForwardCard>card;
+							const richTextNodes = forwardCard.orig.modules.module_dynamic.desc?.rich_text_nodes || [];
+							const text = forwardCard.orig.modules.module_dynamic.desc?.text || "";
+							const content: string = richTextNodes?.map( node => node.text ).join() + text;
+							result = value.reg ?
+								!new RegExp( value.reg ).test( content )
+								: false;
+						} else if ( card.type === value.type ) {
+							// 其他类型动态暂且只匹配动态的文字内容及tag
+							result = value.reg ? !new RegExp( value.reg ).test( card.modules.module_dynamic.desc?.text || "" ) : false;
+						} else {
+							result = true;
+						}
+						if ( !result ) {
+							bot.logger.info( "保存已过滤的消息: ", card.id_str, "触发的规则是：", filterDynamicType );
+							if ( !dynamicIdList.includes( card.id_str ) ) {
+								bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, card.id_str );
+								dynamicIdList.push( card.id_str );
+							}
+							return false;
+						}
+					}
+					return true;
 				} );
-			} else {
-				filter_items = items.filter( card => !config.filterDynamicType.includes( card.type ) )
-					.filter( c => !dynamicIdList.includes( c.id_str ) && c.visible );
-			}
+			
+			// 把过滤掉的消息ID保存，避免后续查询因为触发反爬虫导致又被推送
+			items.filter( c => !dynamicIdList.includes( c.id_str )
+				&& c.visible
+				&& reg.test( c.modules.module_dynamic.desc?.text || "" ) ).forEach( value => {
+				bot.logger.info( "保存已过滤的消息: ", value.id_str, "触发的规则是：", `${ config.filterContent }` );
+				bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, value.id_str );
+			} );
 			
 			if ( filter_items.length > 0 ) {
 				resolve( filter_items );
@@ -247,6 +284,7 @@ export const getBiliLiveStatus: ( uid: number, no_cache?: boolean, cache_time?: 
 		return Promise.resolve( JSON.parse( live_info ) );
 	}
 	
+	BILIBILI_DYNAMIC_HEADERS.Cookie = config.cookie;
 	return new Promise( ( resolve ) => {
 		axios.get( API.bili_live_status, {
 			params: {

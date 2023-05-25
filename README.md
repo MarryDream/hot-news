@@ -155,7 +155,11 @@ aliases:
 # 过滤动态内容的正则，不需要过滤则设置为空
 filterContent: "恭喜.*中奖"
 # 按照动态类型进行过滤，可用类型参考下文
-filterDynamicType: [ ]
+filterDynamicType:
+  - type: DYNAMIC_TYPE_FORWARD
+    reg: 互动抽奖
+# B站个人已登录的Cookie
+cookie: ""
 ```
 
 ### 模版消息配置

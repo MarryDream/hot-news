@@ -322,7 +322,7 @@ export type BiliDynamicMajor =
 /**
  * @type BiliDynamicType bilibili动态类型
  */
-type BiliDynamicType =
+export type BiliDynamicType =
 // 专栏类型
 	"DYNAMIC_TYPE_ARTICLE"
 	// 投稿视频类型
