@@ -3,13 +3,15 @@ const template = `<div class="qrcode_main">
 	<img src="../../public/img/bili_column_icon_bilibili.png" alt="logo"/>
 	<div>
 		<p style="color: #40171C">识别图中二维码，查看全文</p>
-		<p style="color: #40171C">图片生成于：2023-03-21 09:03</p>
+		<p style="color: #40171C">图片生成于：{{create_time}}</p>
 	</div>
 </div>
 <div class="right">
 	<div ref="qrcode" style="padding: 5px"></div>
 </div>
 </div>`
+
+import { toHumanize } from "../../public/js/utils";
 
 const { defineComponent, ref, onMounted } = Vue;
 
@@ -25,6 +27,8 @@ export default defineComponent( {
 	},
 	setup( props ) {
 		const qrcode = ref( null );
+		const date = new Date();
+		const create_time = ref( toHumanize( date.getTime() / 1000 | 0, 2 ) );
 		onMounted( () => {
 			new QRCode( qrcode.value, {
 				text: props.url,
@@ -36,7 +40,8 @@ export default defineComponent( {
 			} );
 		} )
 		return {
-			qrcode
+			qrcode,
+			create_time
 		}
 	}
 } );
