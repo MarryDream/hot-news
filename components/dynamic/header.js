@@ -16,9 +16,9 @@ const template = `<div class="box-main">
 		<slot/>
 	</div>
 </div>
-<div class="decorate-dom" v-if="decorate">
+<div :class="decorateClass" v-if="decorate">
 	<img class="decorate-img" :src="decorate.card_url" alt="decorate"/>
-	<span :style="{color: decorate.fan.color}">{{decorate.fan.num_str}}</span>
+	<span :style="{color: decorate.fan.color}" v-if="decorate.type===3">{{decorate.fan.num_str}}</span>
 </div>
 </div>`;
 
@@ -59,7 +59,8 @@ export default defineComponent( {
 			isOfficial: props.official_verify.type === 1,
 			isPersonal: props.official_verify.type === 0,
 			isBigVip: props.vip.status === 1,
-			isSmallVip: props.vip.status === 1 && aprilFoolsDay
+			isSmallVip: props.vip.status === 1 && aprilFoolsDay,
+			decorateClass: props.decorate.type === 1 ? "decorate-dom-type1" : "decorate-dom-type3"
 		} );
 		
 		return {

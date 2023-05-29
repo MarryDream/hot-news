@@ -106,10 +106,16 @@ img {
 	background-image: url(//s1.hdslb.com/bfs/seed/jinkela/short/user-avatar/small-vip.svg)
 }
 
-.decorate-dom {
-	/*宽高是原版的1.5倍*/
-	height: 51px;
-	width: 90px;
+.decorate-dom-type3 {
+	height: 44px;
+	width: 146px;
+	position: relative;
+	margin-right: 20px;
+}
+
+.decorate-dom-type1 {
+	height: 34px;
+	width: 60px;
 	position: relative;
 	margin-right: 20px;
 }
@@ -119,12 +125,12 @@ img {
 	width: 100%;
 }
 
-.decorate-dom span {
+.decorate-dom-type3 span {
 	font-family: fanscard;
 	font-size: 14px;
 	position: absolute;
-	right: 43px;
-	top: 15px;
+	right: 54px;
+	top: 17px;
 	transform: scale(.88);
 	transform-origin: right;
 	font-weight: 400;
