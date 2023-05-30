@@ -21,14 +21,30 @@ export class ScreenshotService {
 		// 判断网页内容是否被重定向至新版动态，如果是则按新版动态处理
 		const url = page.url();
 		if ( content.includes( "opus-detail" ) ) {
-			bot.logger.info( `${ url }, 按新版B站动态[opus]处理截图` )
-			await page.$eval( "#bili-header-container", element => element.remove() );
+			bot.logger.info( `${ url }, 按新版B站动态[opus]处理截图` );
+			let element = await page.$( "#bili-header-container" );
+			if ( element ) {
+				await page.$eval( "#bili-header-container", element => element.remove() );
+			}
 			const detail = await page.waitForSelector( ".bili-opus-view" );
 			return detail?.screenshot( { encoding } );
 		}
-		await page.$eval( "#internationalHeader", element => element.remove() );
+		
+		let element = await page.$( "#internationalHeader" );
+		if ( element ) {
+			await page.$eval( "#internationalHeader", element => element.remove() );
+		}
+		element = await page.$( "#bili-header-container" );
+		if ( element ) {
+			await page.$eval( "#bili-header-container", element => element.remove() );
+		}
 		// 把未登录的弹框节点删掉
 		await page.$eval( ".unlogin-popover", element => element.remove() );
+		element = await page.$( ".card" );
+		if ( !element ) {
+			// 如果没有这个元素再等3秒，还没有就不管了。
+			await page.waitForTimeout( 3000 );
+		}
 		let card = await page.waitForSelector( ".card" );
 		let clip = await card?.boundingBox();
 		let bar = await page.waitForSelector( ".bili-dyn-item__footer" )

@@ -187,7 +187,7 @@ export class BiliDynamicImpl implements NewsService {
 			// 直接截B站的图
 			const res = await renderer.asForFunction( url, ScreenshotService.articleDynamicPageFunction, this.viewPort );
 			if ( res.code === 'ok' ) {
-				imgMsg = segment.image( this.completeProtocol( <string>res.data ) );
+				imgMsg = res.data;
 			} else {
 				bot.logger.error( res.error );
 				imgMsg = MessageMethod.parseTemplate( config.errorMsgTemplate, params );
@@ -230,7 +230,7 @@ export class BiliDynamicImpl implements NewsService {
 		} else {
 			const res = await renderer.asForFunction( url, ScreenshotService.normalDynamicPageFunction, this.viewPort );
 			if ( res.code === "ok" ) {
-				img = segment.image( this.completeProtocol( <string>res.data ) );
+				img = res.data;
 				ok = true;
 			} else {
 				bot.logger.error( res.error );
