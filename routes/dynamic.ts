@@ -25,7 +25,8 @@ export default express.Router().get( "/", async ( req, res ) => {
 		res.send( {
 			...card,
 			...up_info,
-			articleHtml: data
+			articleHtml: data,
+			jump_url
 		} )
 		return;
 	} else if ( card.type === 'DYNAMIC_TYPE_AV' ) {

@@ -4,6 +4,7 @@ import {
 	BiliDynamicCard,
 	BiliDynamicMajorArchive,
 	BiliDynamicMajorArticle,
+	BiliDynamicMajorOpus,
 	ChatInfo,
 	DynamicInfo
 } from "#hot-news/types/type";
@@ -124,14 +125,23 @@ export class BiliDynamicImpl implements NewsService {
 	}
 	
 	private async articleHandle( card: BiliDynamicCard, { type, targetId }: ChatInfo ): Promise<void> {
-		const {
-			article: {
-				desc,
-				title,
-				jump_url,
-				label
-			}
-		} = <BiliDynamicMajorArticle>card.modules.module_dynamic.major;
+		let desc = "", title = "", jump_url = "", label = "";
+		if ( card.modules.module_dynamic.major?.type === 'MAJOR_TYPE_ARTICLE' ) {
+			const {
+				desc: _desc,
+				title: _title,
+				jump_url: _jump_url,
+				label: _label
+			} = ( <BiliDynamicMajorArticle>card.modules.module_dynamic.major ).article;
+			[ desc, title, jump_url, label ] = [ _desc, _title, _jump_url, _label ];
+		} else if ( card.modules.module_dynamic.major?.type === 'MAJOR_TYPE_OPUS' ) {
+			const {
+				title: _title,
+				jump_url: _jump_url,
+				summary: { text }
+			} = ( <BiliDynamicMajorOpus>card.modules.module_dynamic.major ).opus;
+			[ desc, title, jump_url, label ] = [ text, _title, _jump_url, "" ];
+		}
 		const { name, mid: uid, pub_time, pub_ts } = card.modules.module_author;
 		const id = card.id_str;
 		const {

@@ -59,7 +59,7 @@ export default defineComponent( {
 		const data = request( `/api/dynamic?dynamicId=${ urlParams.dynamicId }` );
 		state.articleHtml = data.articleHtml;
 		if ( data.type === 'DYNAMIC_TYPE_ARTICLE' ) {
-			state.url = `https:${ data.modules.module_dynamic.major.article.jump_url }`;
+			state.url = `https:${ data.jump_url }`;
 		} else if ( data.type === 'DYNAMIC_TYPE_AV' ) {
 			state.url = `https:${ data.modules.module_dynamic.major.archive.jump_url }`;
 		} else {
