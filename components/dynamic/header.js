@@ -60,7 +60,7 @@ export default defineComponent( {
 			isPersonal: props.official_verify.type === 0,
 			isBigVip: props.vip.status === 1,
 			isSmallVip: props.vip.status === 1 && aprilFoolsDay,
-			decorateClass: props.decorate.type === 1 ? "decorate-dom-type1" : "decorate-dom-type3"
+			decorateClass: props.decorate?.type === 1 ? "decorate-dom-type1" : "decorate-dom-type3"
 		} );
 		
 		return {
