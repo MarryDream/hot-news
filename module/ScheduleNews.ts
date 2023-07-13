@@ -1,20 +1,23 @@
 import { cancelJob, Job, scheduleJob } from "node-schedule";
-import { randomInt } from "#genshin/utils/random";
-import { CHANNEL_NAME, DB_KEY } from "#hot-news/util/constants";
-import { getBiliDynamicNew } from "#hot-news/util/api";
-import { BOT } from "@modules/bot";
-import { scheduleNews } from "#hot-news/init";
-import NewsConfig from "#hot-news/module/NewsConfig";
-import { NewsServiceFactory } from "#hot-news/module/NewsServiceFactory";
-import { RefreshCatch } from "@modules/management/refresh";
+import { CHANNEL_NAME, DB_KEY } from "#/hot-news/util/constants";
+import { getBiliDynamicNew } from "#/hot-news/util/api";
+import { BOT } from "@/modules/bot";
+import { NewsServiceFactory } from "#/hot-news/module/NewsServiceFactory";
+import { RefreshCatch } from "@/modules/management/refresh";
+import { INewsConfig } from "#/hot-news/module/NewsConfig";
+import { getRandomNumber } from "@/utils/random";
 
 export class ScheduleNews {
 	private readonly bot: BOT;
-	private readonly config: NewsConfig;
+	private readonly config: INewsConfig;
 	
-	public constructor( bot: BOT, config: NewsConfig ) {
+	public constructor( bot: BOT, config: INewsConfig ) {
 		this.bot = bot;
 		this.config = config;
+		
+		this.createNewsSchedule();
+		this.initAllBiliDynamic().then();
+		this.initSchedule();
 	}
 	
 	public async refresh(): Promise<string> {
@@ -36,7 +39,7 @@ export class ScheduleNews {
 	
 	public createNewsSchedule(): void {
 		scheduleJob( "hot-news", "0 30 8 * * *", async () => {
-			const sec: number = randomInt( 0, 180 );
+			const sec: number = getRandomNumber( 0, 180 );
 			const time = new Date().setSeconds( sec * 10 );
 			
 			const job: Job = scheduleJob( time, async () => {
@@ -53,8 +56,8 @@ export class ScheduleNews {
 	}
 	
 	public initSchedule(): void {
-		/* 创建原神动态定时任务 */
-		scheduleNews.createBiliSchedule();
+		/* 创建B站动态｜直播的定时任务 */
+		this.createBiliSchedule();
 		
 		if ( this.config.subscribeMoyu.enable ) {
 			scheduleJob( "hot-news-moyu-job", this.config.subscribeMoyu.cronRule, async () => {

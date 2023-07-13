@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
 import bot from 'ROOT';
-import { formatDate } from "#hot-news/util/tools";
-import { DB_KEY } from "#hot-news/util/constants";
+import { formatDate } from "#/hot-news/util/tools";
+import { DB_KEY } from "#/hot-news/util/constants";
 import {
 	BiliDynamicCard,
 	BiliDynamicForwardCard,
@@ -9,10 +9,10 @@ import {
 	LiveUserInfo,
 	News,
 	UpCardInfo
-} from "#hot-news/types/type";
+} from "#/hot-news/types/type";
 import moment from "moment";
-import { config } from "#hot-news/init";
-import fetch from "node-fetch";
+import { config } from "#/hot-news/init";
+import fetch, { Response } from "node-fetch";
 
 const API = {
 	sina: 'https://www.anyknew.com/api/v1/sites/sina',
@@ -42,18 +42,54 @@ const NEWS_HEADERS = {
 const BILIBILI_DYNAMIC_HEADERS = {
 	"Origin": "https://space.bilibili.com",
 	"Referer": "https://space.bilibili.com/$/dynamic",
-	"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36",
-	"Accept": "application/json",
-	"Connection": "keep-alive",
-	"dnt": "1",
-	"sec-ch-ua": '"Google Chrome";v="113", "Chromium";v="113", "Not-A.Brand";v="24"',
-	"sec-ch-ua-mobile": "?0",
-	"sec-ch-ua-platform": "macOS",
-	"sec-fetch-dest": "empty",
-	"sec-fetch-mode": "cors",
-	"sec-fetch-site": "same-site",
-	"sec-gpc": "1",
-	"Cookie": "buvid3=B5E01E8E-B409-B55C-9272-FAB06D296DF702893infoc; b_nut=1684924002; b_lsid=8D5C79EA_1884D4BF359; _uuid=4AF6F1018-AF3A-F6B7-D7BF-D727FAF6139903172infoc; buvid4=089966E0-FEA4-97DF-3408-5E48096DA8BF03498-023052418-dgxPV9wC5CBc/cvu8g4chQ%3D%3D; buvid_fp=5297465754747ebfb0ec68539bc5b225"
+	"User-Agent": "Mozilla/5.0",
+	"Cookie": ""
+}
+
+
+function get_uuid() {
+	let e = get_part_str( 8 )
+		, t = get_part_str( 4 )
+		, r = get_part_str( 4 )
+		, n = get_part_str( 4 )
+		, o = get_part_str( 12 )
+		, i = ( new Date ).getTime();
+	return e + "-" + t + "-" + r + "-" + n + "-" + o + add_zero_char( ( i % 1e5 ).toString(), 5 ) + "infoc"
+}
+
+function get_part_str( e ) {
+	let t = ""
+	for ( let r = 0; r < e; r++ )
+		t += dec_to_hex( 16 * Math.random() );
+	return add_zero_char( t, e )
+}
+
+function add_zero_char( e, t ) {
+	let r = "";
+	if ( e.length < t )
+		for ( let n = 0; n < t - e.length; n++ )
+			r += "0";
+	return r + e
+}
+
+
+function dec_to_hex( e ) {
+	return Math.ceil( e ).toString( 16 ).toUpperCase()
+}
+
+async function getCookies( uid: number ): Promise<Record<string, string>> {
+	BILIBILI_DYNAMIC_HEADERS.Referer.replace( "$", `${ uid }` )
+	BILIBILI_DYNAMIC_HEADERS.Cookie = `_uuid=${ get_uuid() }`
+	return axios.get( `https://space.bilibili.com/${ uid }/dynamic`, {
+		headers: BILIBILI_DYNAMIC_HEADERS
+	} ).then( resp => {
+		const exec = /<meta name="spm_prefix" content="([^"]+?)">/.exec( resp.data );
+		return {
+			spm_prefix: exec ? exec[1] : "",
+			cookies: resp.headers["set-cookie"]?.filter( value => !!value )
+				.map( value => value.trim().split( ";" )[0] ).join( ";" ) || ""
+		}
+	} )
 }
 
 export const getNews: ( channel?: string ) => Promise<string> = async ( channel: string = 'toutiao' ) => {
@@ -109,8 +145,21 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 	// 已经发布的动态ID
 	const dynamicIdList: string[] = await bot.redis.getSet( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }` );
 	
+	const cookies = await getCookies( uid );
+	
+	await axios.post( "https://api.bilibili.com/x/internal/gaia-gateway/ExClimbWuzhi", {
+		headers: BILIBILI_DYNAMIC_HEADERS,
+		data: {
+			'3064': 1,
+			'39c8': `${ cookies.spm_prefix }.fp.risk`,
+			'3c43': {
+				'adca': BILIBILI_DYNAMIC_HEADERS["User-Agent"].includes( "Windows" ) ? "Win32" : "Linux"
+			}
+		}
+	} )
+	
 	BILIBILI_DYNAMIC_HEADERS.Referer = BILIBILI_DYNAMIC_HEADERS.Referer.replace( "$", uid.toString( 10 ) );
-	BILIBILI_DYNAMIC_HEADERS.Cookie = config.cookie;
+	BILIBILI_DYNAMIC_HEADERS.Cookie = cookies['cookies'];
 	return new Promise( ( resolve ) => {
 		axios.get( API.biliDynamic, {
 			params: {

@@ -1,4 +1,4 @@
-import { MessageType } from "@modules/message";
+import { MessageType } from "@/modules/message";
 import { ImageElem } from "icqq";
 
 /**
@@ -31,18 +31,18 @@ export interface BiliDynamicForwardCard extends BiliDynamicCard {
 	orig: BiliDynamicCard;
 }
 
-interface Comment {
+export interface Comment {
 	count: number;
 	forbidden: boolean;
 	hidden: boolean;
 }
 
-interface Forward {
+export interface Forward {
 	count: number;
 	forbidden: boolean;
 }
 
-interface Like {
+export interface Like {
 	count: number;
 	forbidden: boolean;
 	status: boolean;
@@ -220,7 +220,7 @@ export interface Vip {
  * @interface
  * 动态的发布者信息
  */
-interface BiliDynamicModuleAuthor {
+export interface BiliDynamicModuleAuthor {
 	avatar: Avatar;
 	decorate: Decorate;
 	face_nft: boolean;
@@ -272,29 +272,81 @@ type RichTextNodeType =
 	| "RICH_TEXT_NODE_TYPE_OGV_EP"
 	| "RICH_TEXT_NODE_TYPE_SEARCH_WORD"
 
-type RichTextNode = RichTextNodeTopic | RichTextNodeText;
+export type RichTextNode = RichTextNodeTopic | RichTextNodeText | RichTextNodeEmoji;
 
-interface RichTextNodeTopic {
+export interface RichTextNodeTopic {
 	jump_url: string;
 	orig_text: string;
 	text: string;
-	type: "RICH_TEXT_NODE_TYPE_TOPIC";
+	type: "RICH_TEXT_NODE_TYPE_TOPIC"; // #话题
 }
 
-interface RichTextNodeText {
+export interface RichTextNodeText {
 	orig_text: string;
 	text: string;
-	type: "RICH_TEXT_NODE_TYPE_TEXT";
+	type: "RICH_TEXT_NODE_TYPE_TEXT";// 常规文本
 }
 
-interface BiliDynamicModuleDynamic {
+export interface RichTextNodeBV {
+	jump_url: string;// 跳转链接
+	orig_text: string;// 视频链接
+	rid: string; // BV号
+	text: string;// 视频标题
+	type: "RICH_TEXT_NODE_TYPE_BV";
+}
+
+export interface RichTextNodeOGVSeason {
+	jump_url: string;// 跳转链接
+	orig_text: string;// 视频链接
+	rid: string; // 剧ID
+	text: string;// 视频标题
+	type: "RICH_TEXT_NODE_TYPE_OGV_SEASON";
+}
+
+export interface RichTextNodeEmoji {
+	type: "RICH_TEXT_NODE_TYPE_EMOJI";// emoji 表情
+	text: string;
+	orig_text: string;
+	emoji: {
+		icon_url: string; // 表情图片URL
+		size: number;// 尺寸：1、2
+		text: string;// 文字描述
+		type: number;// 类型：1、2、3
+	}
+}
+
+export interface RichTextNodeWeb {
+	type: "RICH_TEXT_NODE_TYPE_WEB";// 网页链接
+	text: string;
+	orig_text: string;
+	jump_url: string // 跳转链接
+}
+
+export interface RichTextNodeGoods {
+	type: "RICH_TEXT_NODE_TYPE_GOODS";// 商品链接
+	text: string;
+	orig_text: string;
+	jump_url: string // 跳转链接
+	icon_name: string;// 图标名称：taobao、
+	rid: string;
+	goods: {
+		jump_url: string;
+		type: number;
+	}
+}
+
+export interface BiliDynamicModuleDynamic {
 	additional: object;
 	desc?: {
 		rich_text_nodes: RichTextNode[]; // 动态文本中的@消息、话题tag、互动抽奖
 		text: string; // 动态的文本内容
 	}; // 专栏类型时该属性为空
 	major?: BiliDynamicMajor; // 纯文本类型、转发动态类型时该属性为空
-	topic?: string; // 截止2022-05-22一直是空的
+	topic?: {
+		id: number;
+		name: string; // 话题名称
+		jump_url: string;// 跳转链接
+	}; // 截止2022-05-22一直是空的
 }
 
 export interface BiliDynamicMajorOpus {
@@ -312,12 +364,32 @@ interface Summary {
 	text: string;
 }
 
+export interface BiliDynamicMajorLiveShare {
+	type: "MAJOR_TYPE_LIVE";
+	live: {
+		title: string;// 直播标题
+		jump_url: string;// 跳转链接
+		live_state: number;// 直播状态
+		reserve_type: number;// 0
+		badge: {// 角标信息
+			text: string;// 角标文案
+			bg_color: string;// 背景颜色
+			color: string;// 字体颜色
+		};
+		desc_first: string;// 直播主分区名
+		desc_second: string;// 观看人数
+		cover: string;// 封面链接
+	}
+}
+
 export type BiliDynamicMajor =
 	BiliDynamicMajorArchive
 	| BiliDynamicMajorArticle
 	| BiliDynamicMajorDraw
 	| BiliDynamicMajorLive
-	| BiliDynamicMajorOpus;
+	| BiliDynamicMajorLiveShare
+	| BiliDynamicMajorOpus
+	;
 
 /**
  * @type BiliDynamicType bilibili动态类型
@@ -399,7 +471,7 @@ export interface BiliDynamicMajorArticle {
 	type: "MAJOR_TYPE_ARTICLE";
 	article: {
 		covers: string[]; // 专栏的封面
-		desc: string; // 专栏内容
+		desc: string; // 专栏简介
 		id: number; // 专栏ID
 		jump_url: string; // 专栏地址，无协议头
 		label: string;

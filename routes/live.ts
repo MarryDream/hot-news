@@ -1,8 +1,8 @@
-import { DB_KEY } from "#hot-news/util/constants";
+import { DB_KEY } from "#/hot-news/util/constants";
 import express from "express";
-import { getLiveUserInfo, getUpInfoFromArticle } from "#hot-news/util/api";
+import { getLiveUserInfo, getUpInfoFromArticle } from "#/hot-news/util/api";
 import bot from "ROOT";
-import { LiveUserInfo, UpCardInfo } from "#hot-news/types/type";
+import { LiveUserInfo, UpCardInfo } from "#/hot-news/types/type";
 
 export default express.Router().get( "/", async ( req, res ) => {
 	const uid: number = parseInt( <string>req.query.uid );

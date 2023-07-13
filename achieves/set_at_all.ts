@@ -1,10 +1,10 @@
-import { InputParameter } from "@modules/command";
+import { defineDirective, InputParameter } from "@/modules/command";
 import { GroupMessageEvent, Member } from "icqq";
-import { DB_KEY } from "#hot-news/util/constants";
-import { getLiveUserInfo } from "#hot-news/util/api";
-import { LiveUserInfo } from "#hot-news/types/type";
+import { DB_KEY } from "#/hot-news/util/constants";
+import { getLiveUserInfo } from "#/hot-news/util/api";
+import { LiveUserInfo } from "#/hot-news/types/type";
 
-export async function main( { sendMessage, messageData, redis, logger, client }: InputParameter ): Promise<void> {
+export default defineDirective( "order", async ( { sendMessage, messageData, redis, client }: InputParameter ) => {
 	const { sender: { role }, group_id } = <GroupMessageEvent>messageData;
 	const uid: string = messageData.raw_message;
 	if ( role === 'member' ) {
@@ -35,4 +35,4 @@ export async function main( { sendMessage, messageData, redis, logger, client }:
 	list.push( uid );
 	list = list.map( value => `- ${ value }` );
 	await sendMessage( `已将UP: ${ name }设置在允许@全体的列表，目前列表有以下UP：\n${ list.join( "\n" ) }` );
-}
+} );

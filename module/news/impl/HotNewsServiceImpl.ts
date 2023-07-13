@@ -1,12 +1,11 @@
-import { NewsService } from "#hot-news/module/news/NewsService";
-import { getNews } from "#hot-news/util/api";
-import { CHANNEL_NAME, DB_KEY } from "#hot-news/util/constants";
-import { ChatInfo } from "#hot-news/types/type";
-import { getHashField } from "#hot-news/util/RedisUtils";
+import { NewsService } from "#/hot-news/module/news/NewsService";
+import { getNews } from "#/hot-news/util/api";
+import { CHANNEL_NAME, DB_KEY } from "#/hot-news/util/constants";
+import { ChatInfo } from "#/hot-news/types/type";
 import bot from "ROOT";
-import { MessageMethod } from "#hot-news/module/message/MessageMethod";
-import { config } from "#hot-news/init";
-import { wait } from "#hot-news/util/tools";
+import { MessageMethod } from "#/hot-news/module/message/MessageMethod";
+import { config } from "#/hot-news/init";
+import { wait } from "#/hot-news/util/tools";
 import { Sendable } from "icqq";
 
 /**
@@ -19,7 +18,7 @@ export class HotNewsServiceImpl implements NewsService {
 			return getNews( `${ channel }` );
 		}
 		
-		throw '[HotNewsServiceImpl]#getInfo的channel为必须参数';
+		throw '[HotNewsServiceImpl]#/getInfo的channel为必须参数';
 	}
 	
 	async handler(): Promise<void> {
@@ -32,7 +31,7 @@ export class HotNewsServiceImpl implements NewsService {
 		for ( let id of set ) {
 			const { type, targetId }: ChatInfo = JSON.parse( id );
 			
-			let channel = await getHashField( DB_KEY.channel, `${ targetId }` );
+			let channel = await bot.redis.getHashField( DB_KEY.channel, `${ targetId }` );
 			if ( !channel ) {
 				continue;
 			}

@@ -1,7 +1,7 @@
 import bot from "ROOT";
-import { MessageType } from "@modules/message";
-import { Order } from "@modules/command";
-import { AuthLevel } from "@modules/management/auth";
+import { MessageType } from "@/modules/message";
+import { Order } from "@/modules/command";
+import { AuthLevel } from "@/modules/management/auth";
 import * as sdk from "icqq";
 import { segment, Sendable } from "icqq";
 
@@ -13,7 +13,7 @@ export class MessageMethod {
 		} else {
 			const sendMessage = bot.message.getSendMessageFunc( userID, MessageType.Group, targetId );
 			const number = await bot.client.pickGroup( targetId ).getAtAllRemainder();
-			if ( !bot.config.atUser && userID === 'all' && number > 0 ) {
+			if ( !bot.config.base.atUser && userID === 'all' && number > 0 ) {
 				const at = segment.at( "all" );
 				if ( typeof msg === "string" ) {
 					const split = msg.length < 60 ? " " : "\n";

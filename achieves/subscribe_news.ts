@@ -1,18 +1,17 @@
-import { InputParameter } from "@modules/command";
-import { MessageType } from "@modules/message";
-import { getBiliLiveStatus } from "#hot-news/util/api";
-import { getChannelKey, getChatInfo } from "#hot-news/util/tools";
-import { CHANNEL_NAME, DB_KEY } from "#hot-news/util/constants";
-import { getHashField } from "#hot-news/util/RedisUtils";
-import { config, scheduleNews } from "#hot-news/init";
+import { defineDirective, InputParameter } from "@/modules/command";
+import { MessageType } from "@/modules/message";
+import { getBiliLiveStatus } from "#/hot-news/util/api";
+import { getChannelKey, getChatInfo } from "#/hot-news/util/tools";
+import { CHANNEL_NAME, DB_KEY } from "#/hot-news/util/constants";
+import { config, scheduleNews } from "#/hot-news/init";
 import { GroupMessageEvent, MessageRet, Sendable } from "icqq";
-import Database from "@modules/database";
-import { NewsServiceFactory } from "#hot-news/module/NewsServiceFactory";
+import Database from "@/modules/database";
+import { NewsServiceFactory } from "#/hot-news/module/NewsServiceFactory";
 
 
 async function biliHandler( targetId: number, sendMessage: ( content: Sendable, allowAt?: boolean ) => Promise<MessageRet>, redis: Database, db_data: string, uid: number, upName: string ): Promise<void> {
 	// 获取用户订阅的UP的uid
-	const uidListStr: string = await getHashField( DB_KEY.notify_bili_ids_key, `${ targetId }` ) || "[]";
+	const uidListStr: string = await redis.getHashField( DB_KEY.notify_bili_ids_key, `${ targetId }` ) || "[]";
 	const uidList: number[] = JSON.parse( uidListStr );
 	if ( uidList.includes( uid ) ) {
 		await sendMessage( `[${ targetId }]已订阅过B站[${ upName }]的动态和直播。` );
@@ -32,7 +31,7 @@ async function biliHandler( targetId: number, sendMessage: ( content: Sendable, 
 	return;
 }
 
-export async function main( { sendMessage, messageData, redis, logger }: InputParameter ): Promise<void> {
+export default defineDirective( "order", async ( { sendMessage, messageData, redis, logger }: InputParameter ) => {
 	const channel = messageData.raw_message || CHANNEL_NAME.toutiao;
 	const { type, targetId } = getChatInfo( messageData );
 	if ( type === MessageType.Unknown ) {
@@ -105,4 +104,4 @@ export async function main( { sendMessage, messageData, redis, logger }: InputPa
 		const news = await NewsServiceFactory.instance( channel ).getInfo( channelKey );
 		await sendMessage( news );
 	}
-}
+} );

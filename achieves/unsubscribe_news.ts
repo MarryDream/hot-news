@@ -1,12 +1,11 @@
-import { InputParameter } from "@modules/command";
-import { CHANNEL_NAME, DB_KEY } from "#hot-news/util/constants";
-import { getChannelKey, getChatInfo } from "#hot-news/util/tools";
-import { MessageType } from "@modules/message";
-import { getHashField } from "#hot-news/util/RedisUtils";
-import Database from "@modules/database";
+import { defineDirective, InputParameter } from "@/modules/command";
+import { CHANNEL_NAME, DB_KEY } from "#/hot-news/util/constants";
+import { getChannelKey, getChatInfo } from "#/hot-news/util/tools";
+import { MessageType } from "@/modules/message";
+import Database from "@/modules/database";
 import { GroupMessageEvent, MessageRet, Sendable } from "icqq";
 
-export async function main( { sendMessage, messageData, redis }: InputParameter ): Promise<void> {
+export default defineDirective( "order", async ( { sendMessage, messageData, redis, client }: InputParameter ) => {
 	const channel = messageData.raw_message;
 	const { type, targetId } = getChatInfo( messageData );
 	if ( type === MessageType.Group ) {
@@ -56,14 +55,14 @@ export async function main( { sendMessage, messageData, redis }: InputParameter 
 		}
 		await sendMessage( `[${ targetId }]已取消订阅[${ channel }]服务` );
 	}
-}
+} );
 
 async function unsubscribeBili( targetId: number, member: string, uid: number, redis: Database, sendMessage: ( content: Sendable, allowAt?: boolean ) => Promise<MessageRet> ) {
 	let exist: boolean = await redis.existSetMember( DB_KEY.sub_bili_ids_key, member )
 	if ( !exist ) {
 		await sendMessage( `[${ targetId }]未订阅任何B站UP的动态和直播` );
 	} else {
-		const uidListStr = await getHashField( DB_KEY.notify_bili_ids_key, `${ targetId }` ) || "[]";
+		const uidListStr = await redis.getHashField( DB_KEY.notify_bili_ids_key, `${ targetId }` ) || "[]";
 		const uidList: number[] = JSON.parse( uidListStr );
 		const name = uid === 401742377 ? "原神" : `${ uid }`;
 		if ( uidList.includes( uid ) ) {

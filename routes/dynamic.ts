@@ -1,8 +1,8 @@
 import express from "express";
-import { getArticleHtml, getUpInfoFromArticle, getUpStat } from "#hot-news/util/api";
-import { BiliDynamicMajorArticle, BiliDynamicMajorOpus } from "#hot-news/types/type";
+import { getArticleHtml, getUpInfoFromArticle, getUpStat } from "#/hot-news/util/api";
+import { BiliDynamicMajorArticle, BiliDynamicMajorOpus } from "#/hot-news/types/type";
 import bot from "ROOT";
-import { DB_KEY } from "#hot-news/util/constants";
+import { DB_KEY } from "#/hot-news/util/constants";
 
 export default express.Router().get( "/", async ( req, res ) => {
 	const dynamicId: string = <string>req.query.dynamicId;

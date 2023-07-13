@@ -1,13 +1,12 @@
-import { NewsService } from "#hot-news/module/news/NewsService";
+import { NewsService } from "#/hot-news/module/news/NewsService";
 import { segment, Sendable } from "icqq"
 import bot from "ROOT";
-import { DB_KEY } from "#hot-news/util/constants";
-import { ChatInfo } from "#hot-news/types/type";
-import { getHashField } from "#hot-news/util/RedisUtils";
-import { MessageMethod } from "#hot-news/module/message/MessageMethod";
-import { getMoyuImg, getMoyuUrl } from "#hot-news/util/api";
-import { config } from "#hot-news/init";
-import { wait } from "#hot-news/util/tools";
+import { DB_KEY } from "#/hot-news/util/constants";
+import { ChatInfo } from "#/hot-news/types/type";
+import { MessageMethod } from "#/hot-news/module/message/MessageMethod";
+import { getMoyuImg, getMoyuUrl } from "#/hot-news/util/api";
+import { config } from "#/hot-news/init";
+import { wait } from "#/hot-news/util/tools";
 
 export class MessAroundServiceImpl implements NewsService {
 	
@@ -37,7 +36,7 @@ export class MessAroundServiceImpl implements NewsService {
 		for ( let id of set ) {
 			const { type, targetId }: ChatInfo = JSON.parse( id );
 			
-			let channel = await getHashField( DB_KEY.channel, `${ targetId }` );
+			let channel = await bot.redis.getHashField( DB_KEY.channel, `${ targetId }` );
 			if ( !channel ) {
 				continue;
 			}

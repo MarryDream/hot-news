@@ -1,10 +1,10 @@
-import { HotNewsServiceImpl } from "#hot-news/module/news/impl/HotNewsServiceImpl";
-import { NewsService } from "#hot-news/module/news/NewsService";
-import { CHANNEL_NAME } from "#hot-news/util/constants";
-import { MessAroundServiceImpl } from "#hot-news/module/news/impl/MessAroundServiceImpl";
-import { SixtySecondsWatchNews } from "#hot-news/module/news/impl/SixtySecondsWatchNews";
-import { BiliDynamicImpl } from "#hot-news/module/news/impl/BiliDynamicImpl";
-import { BiliLiveImpl } from "#hot-news/module/news/impl/BiliLiveImpl";
+import { HotNewsServiceImpl } from "#/hot-news/module/news/impl/HotNewsServiceImpl";
+import { NewsService } from "#/hot-news/module/news/NewsService";
+import { CHANNEL_NAME } from "#/hot-news/util/constants";
+import { MessAroundServiceImpl } from "#/hot-news/module/news/impl/MessAroundServiceImpl";
+import { SixtySecondsWatchNews } from "#/hot-news/module/news/impl/SixtySecondsWatchNews";
+import { BiliDynamicImpl } from "#/hot-news/module/news/impl/BiliDynamicImpl";
+import { BiliLiveImpl } from "#/hot-news/module/news/impl/BiliLiveImpl";
 
 export class NewsServiceFactory {
 	/**

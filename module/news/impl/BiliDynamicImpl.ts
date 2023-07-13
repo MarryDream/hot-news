@@ -1,4 +1,4 @@
-import { NewsService } from "#hot-news/module/news/NewsService";
+import { NewsService } from "#/hot-news/module/news/NewsService";
 import { segment, Sendable } from "icqq";
 import {
 	BiliDynamicCard,
@@ -7,20 +7,19 @@ import {
 	BiliDynamicMajorOpus,
 	ChatInfo,
 	DynamicInfo
-} from "#hot-news/types/type";
-import { getHashField } from "#hot-news/util/RedisUtils";
-import { DB_KEY } from "#hot-news/util/constants";
-import { getBiliDynamicNew } from "#hot-news/util/api";
-import { formatTimestamp, wait } from "#hot-news/util/tools";
-import { config, renderer } from "#hot-news/init";
+} from "#/hot-news/types/type";
+import { DB_KEY } from "#/hot-news/util/constants";
+import { getBiliDynamicNew } from "#/hot-news/util/api";
+import { formatTimestamp, wait } from "#/hot-news/util/tools";
+import { config, renderer } from "#/hot-news/init";
 import bot from "ROOT";
-import { MessageMethod } from "#hot-news/module/message/MessageMethod";
-import { RenderResult } from "@modules/renderer";
-import { ScreenshotService } from "#hot-news/module/screenshot/ScreenshotService";
-import puppeteer from "puppeteer";
+import { MessageMethod } from "#/hot-news/module/message/MessageMethod";
+import { RenderResult } from "@/modules/renderer";
+import { ScreenshotService } from "#/hot-news/module/screenshot/ScreenshotService";
+import { Viewport } from "puppeteer";
 
 export class BiliDynamicImpl implements NewsService {
-	private readonly viewPort: puppeteer.Viewport = {
+	private readonly viewPort: Viewport = {
 		width: 2000,
 		height: 1000,
 		deviceScaleFactor: 2
@@ -31,12 +30,13 @@ export class BiliDynamicImpl implements NewsService {
 	}
 	
 	async handler(): Promise<void> {
+		console.log( 'B站动态任务开始执行：>>>------------------->>>' )
 		const set = await bot.redis.getSet( DB_KEY.sub_bili_ids_key );
 		for ( const sub of set ) {
 			// 获取QQ号/QQ群号
 			const chatInfo: ChatInfo = JSON.parse( sub );
 			// 获取用户订阅的UP的uid
-			const uidListStr = await getHashField( DB_KEY.notify_bili_ids_key, `${ chatInfo.targetId }` ) || "[]";
+			const uidListStr = await bot.redis.getHashField( DB_KEY.notify_bili_ids_key, `${ chatInfo.targetId }` ) || "[]";
 			const uidList: number[] = JSON.parse( uidListStr );
 			
 			// B站动态信息推送
@@ -173,7 +173,7 @@ export class BiliDynamicImpl implements NewsService {
 		let imgMsg: Sendable;
 		if ( config.screenshotType === 2 ) {
 			const res: RenderResult = await renderer.asSegment(
-				"/dynamic.html",
+				"/dynamic",
 				{ dynamicId: card.id_str },
 				this.viewPort
 			);
@@ -217,7 +217,7 @@ export class BiliDynamicImpl implements NewsService {
 		let ok: boolean = false;
 		if ( config.screenshotType === 2 ) {
 			const res: RenderResult = await renderer.asSegment(
-				"/dynamic.html",
+				"/dynamic",
 				{ dynamicId: id },
 				this.viewPort
 			);

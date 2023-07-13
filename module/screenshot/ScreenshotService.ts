@@ -1,6 +1,6 @@
-import puppeteer from "puppeteer";
+import { Page, ScreenshotOptions } from "puppeteer";
 import bot from "ROOT";
-import { getVersion, version_compare } from "#hot-news/util/tools";
+import { getVersion, version_compare } from "#/hot-news/util/tools";
 
 export class ScreenshotService {
 	
@@ -8,7 +8,7 @@ export class ScreenshotService {
 	 * B站常规动态截图处理
 	 * @param page
 	 */
-	public static async normalDynamicPageFunction( page: puppeteer.Page ): Promise<Buffer | string | void> {
+	public static async normalDynamicPageFunction( page: Page ): Promise<Buffer | string | void> {
 		// 判断版本号，兼容低版本的截图输出格式。
 		const version = getVersion();
 		let encoding: 'base64' | 'binary' = "base64";
@@ -60,9 +60,9 @@ export class ScreenshotService {
 	 * B站动态专栏动态截图
 	 * @param page
 	 */
-	public static async articleDynamicPageFunction( page: puppeteer.Page ): Promise<Buffer | string | void> {
+	public static async articleDynamicPageFunction( page: Page ): Promise<Buffer | string | void> {
 		await page.$eval( "#internationalHeader", element => element.remove() );
-		const option: puppeteer.ScreenshotOptions = { encoding: "base64" };
+		const option: ScreenshotOptions = { encoding: "base64" };
 		const element = await page.$( ".article-container__content" );
 		if ( element ) {
 			return await element.screenshot( option );

@@ -1,19 +1,18 @@
-import { NewsService } from "#hot-news/module/news/NewsService";
+import { NewsService } from "#/hot-news/module/news/NewsService";
 import { ImageElem, segment, Sendable } from "icqq";
-import { DB_KEY } from "#hot-news/util/constants";
-import { BiliLiveInfo, ChatInfo } from "#hot-news/types/type";
-import { getHashField } from "#hot-news/util/RedisUtils";
-import { getBiliLiveStatus } from "#hot-news/util/api";
-import { msToHumanize, wait } from "#hot-news/util/tools";
-import { RenderResult } from "@modules/renderer";
-import { config, renderer } from "#hot-news/init";
-import { MessageMethod } from "#hot-news/module/message/MessageMethod";
+import { DB_KEY } from "#/hot-news/util/constants";
+import { BiliLiveInfo, ChatInfo } from "#/hot-news/types/type";
+import { getBiliLiveStatus } from "#/hot-news/util/api";
+import { msToHumanize, wait } from "#/hot-news/util/tools";
+import { RenderResult } from "@/modules/renderer";
+import { config, renderer } from "#/hot-news/init";
+import { MessageMethod } from "#/hot-news/module/message/MessageMethod";
 import bot from "ROOT";
-import { MessageType } from "@modules/message";
-import puppeteer from "puppeteer";
+import { MessageType } from "@/modules/message";
+import { Viewport } from "puppeteer";
 
 export class BiliLiveImpl implements NewsService {
-	private readonly viewPort: puppeteer.Viewport = {
+	private readonly viewPort: Viewport = {
 		width: 2000,
 		height: 1000,
 		deviceScaleFactor: 3
@@ -29,7 +28,7 @@ export class BiliLiveImpl implements NewsService {
 			// 获取QQ号/QQ群号
 			const chatInfo: ChatInfo = JSON.parse( sub );
 			// 获取用户订阅的UP的uid
-			const uidListStr = await getHashField( DB_KEY.notify_bili_ids_key, `${ chatInfo.targetId }` ) || "[]";
+			const uidListStr = await bot.redis.getHashField( DB_KEY.notify_bili_ids_key, `${ chatInfo.targetId }` ) || "[]";
 			const uidList: number[] = JSON.parse( uidListStr );
 			
 			// B站直播推送
@@ -47,7 +46,7 @@ export class BiliLiveImpl implements NewsService {
 					let img: ImageElem = segment.image( cover, true, 60 );
 					if ( config.screenshotType === 2 ) {
 						const res: RenderResult = await renderer.asSegment(
-							"/live.html",
+							"/live",
 							{ uid: uid },
 							this.viewPort
 						);
