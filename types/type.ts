@@ -224,7 +224,7 @@ export interface BiliDynamicModuleAuthor {
 	avatar: Avatar;
 	decorate: Decorate;
 	face_nft: boolean;
-	following: boolean;
+	following: boolean | null;
 	label: string;
 	official_verify: OfficialVerify;
 	pendant: Pendant;
@@ -272,7 +272,36 @@ type RichTextNodeType =
 	| "RICH_TEXT_NODE_TYPE_OGV_EP"
 	| "RICH_TEXT_NODE_TYPE_SEARCH_WORD"
 
-export type RichTextNode = RichTextNodeTopic | RichTextNodeText | RichTextNodeEmoji;
+export type RichTextNode = RichTextNodeTopic | RichTextNodeText | RichTextNodeEmoji
+	| RichTextNodeGoods | RichTextNodeWeb | RichTextNodeBV | RichTextNodeOGVSeason
+	| RichTextNodeMail | RichTextNodeAt | RichTextNodeLottery | RichTextNodeVote;
+
+export interface RichTextNodeVote {
+	orig_text: string;
+	text: string;
+	rid: string; // 投票ID
+	type: "RICH_TEXT_NODE_TYPE_LOTTERY";// 投票
+}
+
+export interface RichTextNodeLottery {
+	orig_text: string;
+	text: string;
+	rid: string; // 抽奖id
+	type: "RICH_TEXT_NODE_TYPE_LOTTERY";// 互动抽奖
+}
+
+export interface RichTextNodeAt {
+	orig_text: string;
+	text: string;
+	rid: string; // 用户uid
+	type: "RICH_TEXT_NODE_TYPE_AT";// AT用户
+}
+
+export interface RichTextNodeMail {
+	orig_text: string;
+	text: string;
+	type: "RICH_TEXT_NODE_TYPE_MAIL";// 邮箱文本
+}
 
 export interface RichTextNodeTopic {
 	jump_url: string;

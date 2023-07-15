@@ -18,7 +18,7 @@ onMounted( () => {
 		width: 60,
 		errorCorrectionLevel: "H"
 	}, error => {
-		console.error( "二维码生成失败: ", error );
+		if ( error ) console.error( "二维码生成失败: ", error );
 	} )
 } )
 </script>

@@ -1,6 +1,5 @@
 <script lang="ts" setup>
-// import VideoQRCode from "#/hot-news/components/common/video_qrcode.vue";
-import VideoQRCode from "../../components/common/video_qrcode.vue";
+import VideoQRCode from "#/hot-news/components/common/video_qrcode.vue";
 import { reactive } from "vue";
 import {
 	BiliDynamicMajorArchive,
@@ -11,7 +10,7 @@ import {
 	Like,
 	UpCardInfo
 } from "#/hot-news/types/type";
-import { toHumanize } from "#/hot-news/util/tools";
+import { toHumanize } from "#/hot-news/util/front-utils";
 
 const props = withDefaults( defineProps<{
 	dynamic: BiliDynamicModuleDynamic,

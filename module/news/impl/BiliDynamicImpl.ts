@@ -30,7 +30,6 @@ export class BiliDynamicImpl implements NewsService {
 	}
 	
 	async handler(): Promise<void> {
-		console.log( 'B站动态任务开始执行：>>>------------------->>>' )
 		const set = await bot.redis.getSet( DB_KEY.sub_bili_ids_key );
 		for ( const sub of set ) {
 			// 获取QQ号/QQ群号

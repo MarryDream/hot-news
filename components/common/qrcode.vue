@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { toHumanize } from "#/hot-news/util/tools";
+import { toHumanize } from "#/hot-news/util/front-utils";
 import { onMounted, Ref, ref } from "vue";
-import QRcode from "qrcode";
+import QRCode from "qrcode";
 
 const props = withDefaults( defineProps<{
 	url: string;
@@ -14,7 +14,7 @@ const date = new Date();
 const create_time: Ref<string> = ref( toHumanize( date.getTime() / 1000 | 0, 2 ) );
 
 onMounted( () => {
-	QRcode.toCanvas( qrcode.value, props.url, {
+	QRCode.toCanvas( qrcode.value, props.url, {
 		color: {
 			light: '#ffffff',
 			dark: '#000000'
@@ -22,7 +22,7 @@ onMounted( () => {
 		width: 100,
 		errorCorrectionLevel: "H"
 	}, error => {
-		console.error( "二维码生成失败: ", error );
+		if ( error ) console.error( "二维码生成失败: ", error );
 	} )
 } )
 </script>

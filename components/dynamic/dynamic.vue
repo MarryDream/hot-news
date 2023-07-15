@@ -11,7 +11,7 @@ import {
 	RichTextNodeGoods,
 	RichTextNodeWeb
 } from "#/hot-news/types/type";
-import { getStyle } from "#/hot-news/util/tools";
+import { getStyle } from "#/hot-news/util/front-utils";
 
 const props = withDefaults( defineProps<{
 	dynamic: BiliDynamicModuleDynamic,
@@ -44,6 +44,7 @@ const state = reactive( {
 		}
 	}
 } );
+
 switch ( props.type ) {
 	case 'DYNAMIC_TYPE_DRAW':
 		const drawItems = ( <BiliDynamicMajorDraw>props.dynamic.major ).draw.items;
@@ -173,7 +174,7 @@ switch ( props.type ) {
 					     :class="(item as RichTextNodeGoods).icon_name === 'taobao' ? '': 'icon--jd'"
 					     :src="(item as RichTextNodeGoods).goods.jump_url"
 					     class="opus-text-rich-hl goods">
-					<span v-else style="font-size:17px;">{{ item.text }}</span>
+					<span v-if="item.type === 'RICH_TEXT_NODE_TYPE_MAIL'" style="font-size:17px;">{{ item.text }}</span>
 				</template>
 			</p>
 			<div v-if="type === 'DYNAMIC_TYPE_DRAW'" class="opus-para-pic">

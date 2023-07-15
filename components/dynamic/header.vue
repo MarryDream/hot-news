@@ -1,14 +1,14 @@
 <script lang="ts" setup>
 
-import { toHumanize } from "#/hot-news/util/tools";
+import { toHumanize } from "#/hot-news/util/front-utils";
 import { reactive } from "vue";
 import { Avatar, Decorate, OfficialVerify, Pendant, Vip } from "#/hot-news/types/type";
 
-const props = withDefaults( defineProps<{
+const props = defineProps<{
 	avatar: Avatar,
-	decorate: Decorate,
+	decorate?: Decorate,
 	face_nft: boolean,
-	following: boolean,
+	following: boolean | null,
 	label: string,
 	official_verify: OfficialVerify,
 	pendant: Pendant,
@@ -22,7 +22,7 @@ const props = withDefaults( defineProps<{
 	pub_time: string,
 	pub_ts: number,
 	type: string
-}>(), {} );
+}>();
 
 const date = new Date();
 const aprilFoolsDay = date.getMonth() + 1 === 4 && date.getDate() === 1;

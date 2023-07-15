@@ -1,8 +1,7 @@
 <script lang="ts" setup>
 
-import { intToColor, toHumanize } from "#/hot-news/util/tools";
-// import VideoQRCode from "#/hot-news/components/common/video_qrcode.vue";
-import VideoQRCode from "../../components/common/video_qrcode.vue";
+import { intToColor, toHumanize } from "#/hot-news/util/front-utils";
+import VideoQRCode from "#/hot-news/components/common/video_qrcode.vue";
 import { onMounted, reactive, ref } from "vue";
 import { urlParamsGet } from "@/utils/url";
 import $http from "#/hot-news/util/http"
@@ -32,36 +31,36 @@ const getData = async () => {
 	data.value = {
 		...res
 	}
+
+	state.name = <string>data.value?.name;
+	state.liveRoom = data.value?.liveRoom;
+	state.level = <string>data.value?.level;
+	if ( data.value?.color ) {
+		state.color = intToColor( <number>data.value?.color );
+	}
+	if ( data.value?.follower_num ) {
+		const fan_num = data.value!.follower_num;
+		if ( fan_num > 10000 ) {
+			const number = Math.round( parseFloat( `${ fan_num / 10000 }` ) * 10 ) / 10;
+			state.follower_num = `${ number }万`;
+		} else {
+			state.follower_num = `${ fan_num }`
+		}
+	}
+
+	state.isOfficial = data.value?.official_type === 1;
+	state.isPersonal = data.value?.official_type === 0;
+	state.isBigVip = data.value?.vip_status === 1;
+	state.isSmallVip = data.value?.vip_status === 1 && aprilFoolsDay;
 }
 
 onMounted( () => {
 	getData();
 } )
-
-state.name = <string>data.value?.name;
-state.liveRoom = data.value?.liveRoom;
-state.level = <string>data.value?.level;
-if ( data.value?.color ) {
-	state.color = intToColor( <number>data.value?.color );
-}
-if ( data.value?.follower_num ) {
-	const fan_num = data.value!.follower_num;
-	if ( fan_num > 10000 ) {
-		const number = Math.round( parseFloat( `${ fan_num / 10000 }` ) * 10 ) / 10;
-		state.follower_num = `${ number }万`;
-	} else {
-		state.follower_num = `${ fan_num }`
-	}
-}
-
-state.isOfficial = data.value?.official_type === 1;
-state.isPersonal = data.value?.official_type === 0;
-state.isBigVip = data.value?.vip_status === 1;
-state.isSmallVip = data.value?.vip_status === 1 && aprilFoolsDay;
 </script>
 
 <template>
-	<div class="live-box">
+	<div id="app" class="live-box">
 		<div class="live-main">
 			<div class="live-preview">
 				<img :src="state.liveRoom.cover" alt="视频预览图" class="live-preview-img">
@@ -70,10 +69,10 @@ state.isSmallVip = data.value?.vip_status === 1 && aprilFoolsDay;
 			<div class="live-desc-info">
 				<h2>{{ state.liveRoom.title }}</h2>
 				<div class="live-stat">
-					<span>{{ state.liveRoom.area_v2_name }}</span>
+					<span>{{ state.liveRoom["area_v2_name"] }}</span>
 					<span>|</span>
 					<span>房间号:</span>
-					<span>{{ state.liveRoom.room_id }}</span>
+					<span>{{ state.liveRoom["room_id"] }}</span>
 				</div>
 			</div>
 			<div class="box-main">

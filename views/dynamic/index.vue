@@ -1,17 +1,23 @@
 <script lang="ts" setup>
-import { onMounted, reactive, ref } from "vue";
+import { onMounted, ref } from "vue";
 import { urlParamsGet } from "@/utils/url";
 import $http from "#/hot-news/util/http";
-import { BiliDynamicCard, BiliDynamicForwardCard, BiliDynamicMajorArchive, UpCardInfo } from "#/hot-news/types/type";
-// import Dynamic from "#/hot-news/components/dynamic/dynamic.vue";
-import Dynamic from "../../components/dynamic/dynamic.vue";
-// import Article from "#/hot-news/views/dynamic/article.vue";
+import {
+	BiliDynamicCard,
+	BiliDynamicForwardCard,
+	BiliDynamicMajorArchive,
+	BiliDynamicModuleAuthor,
+	BiliDynamicModuleDynamic,
+	Comment,
+	Forward,
+	Like,
+	UpCardInfo
+} from "#/hot-news/types/type";
+import Dynamic from "#/hot-news/components/dynamic/dynamic.vue";
+import Face from "#/hot-news/components/dynamic/face.vue";
+import QRCode from "#/hot-news/components/common/qrcode.vue";
+import DynamicHeader from "#/hot-news/components/dynamic/header.vue";
 import Article from "./article.vue";
-// import Face from "#/hot-news/components/dynamic/face.vue";
-import Face from "../../components/dynamic/face.vue";
-// import QRCode from "#/hot-news/components/common/qrcode.vue";
-import QRCode from "../../components/common/qrcode.vue";
-// import Video from "#/hot-news/views/dynamic/video.vue";
 import Video from "./video.vue";
 
 type ArticleInfo = {
@@ -19,28 +25,55 @@ type ArticleInfo = {
 	articleHtml: string;
 }
 
-const state = reactive( {
-	url: "https://m.bilibili.com/dynamic/",
-	author: {},
-	dynamic: {},
-	orig: {},
-	type: "",
-	face: {
-		avatar: "",
-		name: "",
-		nicknameColor: ""
-	},
-	articleHtml: "",
-	stat: {}
-} );
+const author = ref<BiliDynamicModuleAuthor & UpCardInfo | null>( null );
+const dynamic = ref<BiliDynamicModuleDynamic | null>( null );
+const face = ref<{
+	avatar: string,
+	name: string,
+	nicknameColor: string
+}>();
+const orig = ref<BiliDynamicCard | null>( null );
+const type = ref<string>( "" );
+const url = ref<string>( "https://m.bilibili.com/dynamic/" );
+const stat = ref<{
+	comment: Comment;
+	forward: Forward;
+	like: Like;
+} | null>( null );
+const articleHtml = ref<string>( "" );
 
 const urlParams = urlParamsGet( location.href );
 const data = ref<BiliDynamicCard & UpCardInfo & ArticleInfo | null>( null );
 
 const getData = async () => {
-	const res = await $http.Dynamic.get( { dynamicId: urlParams.dynamicId } );
-	data.value = {
-		...res
+	data.value = await $http.Dynamic.get( { dynamicId: urlParams.dynamicId } )
+	if ( !data.value ) return;
+
+	if ( data.value?.type === 'DYNAMIC_TYPE_ARTICLE' ) {
+		url.value = `https:${ data.value?.jump_url }`;
+		articleHtml.value = data.value?.articleHtml || "";
+	} else if ( data.value?.type === 'DYNAMIC_TYPE_AV' ) {
+		url.value = `https:${ ( <BiliDynamicMajorArchive>data.value?.modules.module_dynamic.major ).archive.jump_url }`;
+	} else {
+		url.value = `${ url.value }${ data.value?.id_str }`;
+	}
+	author.value = {
+		...data.value!.modules.module_author,
+		follower: data.value!.follower,
+		article_count: data.value!.article_count,
+		vip_status: data.value!.vip_status
+	};
+	dynamic.value = data.value!.modules.module_dynamic;
+	type.value = data.value!.type;
+	stat.value = data.value?.modules.module_stat || null;
+	if ( data.value!.type === "DYNAMIC_TYPE_FORWARD" ) {
+		const forward = <BiliDynamicForwardCard>data.value;
+		face.value = {
+			avatar: forward.orig.modules.module_author.face,
+			name: forward.orig.modules.module_author.name,
+			nicknameColor: forward.orig.modules.module_author.vip.nickname_color
+		}
+		orig.value = forward.orig;
 	}
 }
 
@@ -48,53 +81,29 @@ onMounted( () => {
 	getData();
 } )
 
-
-if ( data.value?.type === 'DYNAMIC_TYPE_ARTICLE' ) {
-	state.url = `https:${ data.value?.jump_url }`;
-} else if ( data.value?.type === 'DYNAMIC_TYPE_AV' ) {
-	state.url = `https:${ ( <BiliDynamicMajorArchive>data.value?.modules.module_dynamic.major ).archive.jump_url }`;
-} else {
-	state.url = `${ state.url }${ data.value?.id_str }`;
-}
-state.author = {
-	...data.value?.modules.module_author,
-	follower: data.value?.follower,
-	article_count: data.value?.article_count
-};
-state.dynamic = data.value?.modules.module_dynamic;
-state.type = data.value!.type;
-state.stat = data.value?.modules.module_stat;
-if ( data.value!.type === "DYNAMIC_TYPE_FORWARD" ) {
-	const forward = <BiliDynamicForwardCard>data.value;
-	state.face.avatar = forward.orig.modules.module_author.face;
-	state.face.name = forward.orig.modules.module_author.name;
-	state.face.nicknameColor = forward.orig.modules.module_author.vip.nickname_color;
-	state.orig = forward.orig;
-}
-
 </script>
 
 <template>
-	<template v-if="state.type === 'DYNAMIC_TYPE_ARTICLE'">
-		<Article :articleHtml="state.articleHtml" :author="state.author" :dynamic="state.dynamic" :type="state.type"
-		         :url="state.url"></Article>
-	</template>
-	<template v-else-if="state.type === 'DYNAMIC_TYPE_AV'">
-		<Video :author="state.author" :dynamic="state.dynamic" :stat="state.stat" :type="state.type"
-		       :url="state.url"></Video>
-	</template>
-	<template v-else>
-		<div style="margin: 20px; border-radius: 10px; border: 1px solid transparent;">
-			<Header v-bind="state.author"/>
-			<Dynamic :dynamic="state.dynamic" :type="state.type">
-				<div v-if="state.type === 'DYNAMIC_TYPE_FORWARD'" class="bili-dyn-content__orig reference">
-					<Face v-bind="state.face"/>
-					<Dynamic :dynamic="state.orig.modules.module_dynamic" :type="state.orig.type"/>
-				</div>
-			</Dynamic>
-			<QRCode :url="state.url"/>
-		</div>
-	</template>
+	<div id="app">
+		<template v-if="type === 'DYNAMIC_TYPE_ARTICLE' && author && dynamic">
+			<Article :articleHtml="articleHtml" :author="author" :dynamic="dynamic" :type="type" :url="url"></Article>
+		</template>
+		<template v-else-if="type === 'DYNAMIC_TYPE_AV' && dynamic && author && stat">
+			<Video :author="author" :dynamic="dynamic" :stat="stat" :type="type" :url="url"></Video>
+		</template>
+		<template v-else>
+			<div style="margin: 20px; border-radius: 10px; border: 1px solid transparent;">
+				<DynamicHeader v-if="author" v-bind="author"/>
+				<Dynamic v-if="dynamic" :dynamic="dynamic" :type="type">
+					<div v-if="type === 'DYNAMIC_TYPE_FORWARD'" class="bili-dyn-content__orig reference">
+						<Face v-if="face" v-bind="face"/>
+						<Dynamic v-if="orig" :dynamic="orig.modules.module_dynamic" :type="orig.type"/>
+					</div>
+				</Dynamic>
+				<QRCode :url="url"/>
+			</div>
+		</template>
+	</div>
 </template>
 
 

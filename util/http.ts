@@ -6,7 +6,7 @@ const apis = {
 }
 
 const { request, server } = register( {
-	baseURL: "/api",
+	baseURL: "/hot-news/api",
 	responseType: "json",
 	timeout: 30000
 }, apis );

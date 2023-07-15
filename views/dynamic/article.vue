@@ -7,8 +7,8 @@ import {
 	BiliDynamicModuleDynamic,
 	UpCardInfo
 } from "#/hot-news/types/type";
-// import QRCode from "#/hot-news/components/common/qrcode.vue";
-import QRCode from "../../components/common/qrcode.vue";
+import QRCode from "#/hot-news/components/common/qrcode.vue";
+import Header from "#/hot-news/components/dynamic/header.vue";
 
 const props = withDefaults( defineProps<{
 	url: string;
@@ -66,7 +66,7 @@ if ( props.author.follower ) {
 				<div class="title-box">
 					<h1 style="color: rgba(0,0,0,.7);margin: 0;">{{ state.title }}</h1>
 				</div>
-				<Header v-bind="author">
+				<Header v-if="author" v-bind="author">
 					<div>
 						<span v-if="state.fan_num_str" class="up_data">粉丝：{{ state.fan_num_str }}&nbsp;</span>
 						<span v-if="author.article_count" class="up_data">文章：{{ author.article_count }}</span>
@@ -74,7 +74,7 @@ if ( props.author.follower ) {
 				</Header>
 			</div>
 		</div>
-		<div class="article-content" v-html="state.contentHtml"></div>
+		<div v-if="state.contentHtml" class="article-content" v-html="state.contentHtml"></div>
 	</div>
 	<QRCode :url="url"></QRCode>
 </template>
