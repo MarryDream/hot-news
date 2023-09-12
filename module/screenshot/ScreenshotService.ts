@@ -38,8 +38,11 @@ export class ScreenshotService {
 		if ( element ) {
 			await page.$eval( "#bili-header-container", element => element.remove() );
 		}
+		element = await page.$( ".unlogin-popover" );
 		// 把未登录的弹框节点删掉
-		await page.$eval( ".unlogin-popover", element => element.remove() );
+		if ( element ) {
+			await page.$eval( ".unlogin-popover", element => element.remove() );
+		}
 		element = await page.$( ".card" );
 		if ( !element ) {
 			// 如果没有这个元素再等3秒，还没有就不管了。
@@ -61,9 +64,19 @@ export class ScreenshotService {
 	 * @param page
 	 */
 	public static async articleDynamicPageFunction( page: Page ): Promise<Buffer | string | void> {
-		await page.$eval( "#internationalHeader", element => element.remove() );
-		const option: ScreenshotOptions = { encoding: "base64" };
-		const element = await page.$( ".article-container__content" );
+		// 判断版本号，兼容低版本的截图输出格式。
+		const version = getVersion();
+		let encoding: 'base64' | 'binary' = "base64";
+		if ( version_compare( version, "2.9.9" ) >= 0 ) {
+			bot.logger.debug( "采用binary的截图输出格式。" )
+			encoding = "binary";
+		}
+		let element = await page.$( "#internationalHeader" );
+		if ( element ) {
+			await page.$eval( "#internationalHeader", element => element.remove() );
+		}
+		const option: ScreenshotOptions = { encoding };
+		element = await page.$( ".article-container__content" );
 		if ( element ) {
 			return await element.screenshot( option );
 		}

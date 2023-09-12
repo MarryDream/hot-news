@@ -4,12 +4,14 @@ import { getBiliLiveStatus } from "#/hot-news/util/api";
 import { getChannelKey, getChatInfo } from "#/hot-news/util/tools";
 import { CHANNEL_NAME, DB_KEY } from "#/hot-news/util/constants";
 import { config, scheduleNews } from "#/hot-news/init";
-import { GroupMessageEvent, MessageRet, Sendable } from "icqq";
-import Database from "@/modules/database";
+import { GroupMessageEvent } from "@/modules/lib";
 import { NewsServiceFactory } from "#/hot-news/module/NewsServiceFactory";
 
 
-async function biliHandler( targetId: number, sendMessage: ( content: Sendable, allowAt?: boolean ) => Promise<MessageRet>, redis: Database, db_data: string, uid: number, upName: string ): Promise<void> {
+async function biliHandler( targetId: number, db_data: string, uid: number, upName: string, {
+	redis,
+	sendMessage
+}: InputParameter ): Promise<void> {
 	// 获取用户订阅的UP的uid
 	const uidListStr: string = await redis.getHashField( DB_KEY.notify_bili_ids_key, `${ targetId }` ) || "[]";
 	const uidList: number[] = JSON.parse( uidListStr );
@@ -31,7 +33,8 @@ async function biliHandler( targetId: number, sendMessage: ( content: Sendable, 
 	return;
 }
 
-export default defineDirective( "order", async ( { sendMessage, messageData, redis, logger }: InputParameter ) => {
+export default defineDirective( "order", async ( i: InputParameter ) => {
+	const { sendMessage, messageData, redis, logger } = i;
 	const channel = messageData.raw_message || CHANNEL_NAME.toutiao;
 	const { type, targetId } = getChatInfo( messageData );
 	if ( type === MessageType.Unknown ) {
@@ -69,7 +72,7 @@ export default defineDirective( "order", async ( { sendMessage, messageData, red
 	
 	// 处理原神B站动态订阅
 	if ( channel === CHANNEL_NAME.genshin || ( channelKey === 401742377 ) ) {
-		await biliHandler( targetId, sendMessage, redis, db_data, 401742377, '原神' );
+		await biliHandler( targetId, db_data, 401742377, '原神', i );
 		return;
 	}
 	
@@ -87,7 +90,7 @@ export default defineDirective( "order", async ( { sendMessage, messageData, red
 			await sendMessage( `查询B站[${ channel }]时网络请求错误, 请联系 BOT 持有者反馈该问题!`, true );
 		}
 		// 初始化该UP的动态数据
-		await biliHandler( targetId, sendMessage, redis, db_data, channelKey, upName );
+		await biliHandler( targetId, db_data, channelKey, upName, i );
 		return;
 	} else {
 		// 处理新闻、摸鱼等订阅

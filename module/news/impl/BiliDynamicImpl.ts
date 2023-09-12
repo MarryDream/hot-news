@@ -1,5 +1,5 @@
 import { NewsService } from "#/hot-news/module/news/NewsService";
-import { segment, Sendable } from "icqq";
+import { Sendable } from "@/modules/lib";
 import {
 	BiliDynamicCard,
 	BiliDynamicMajorArchive,
@@ -24,11 +24,11 @@ export class BiliDynamicImpl implements NewsService {
 		height: 1000,
 		deviceScaleFactor: 2
 	}
-	
+
 	async getInfo( channel?: string ): Promise<Sendable> {
 		return "";
 	}
-	
+
 	async handler(): Promise<void> {
 		const set = await bot.redis.getSet( DB_KEY.sub_bili_ids_key );
 		for ( const sub of set ) {
@@ -37,7 +37,7 @@ export class BiliDynamicImpl implements NewsService {
 			// 获取用户订阅的UP的uid
 			const uidListStr = await bot.redis.getHashField( DB_KEY.notify_bili_ids_key, `${ chatInfo.targetId }` ) || "[]";
 			const uidList: number[] = JSON.parse( uidListStr );
-			
+
 			// B站动态信息推送
 			let cards: BiliDynamicCard[] = [];
 			for ( let uid of uidList ) {
@@ -52,7 +52,7 @@ export class BiliDynamicImpl implements NewsService {
 			if ( limit ) {
 				limitMillisecond = parseInt( limit ) * 60 * 60 * 1000;
 			}
-			
+
 			let i = 0;
 			for ( let card of cards ) {
 				const { name, mid: uid, pub_time, pub_ts } = card.modules.module_author;
@@ -63,20 +63,20 @@ export class BiliDynamicImpl implements NewsService {
 				} = card.modules.module_stat;
 				const pub_tsm: number = pub_ts * 1000;
 				const pub_tss: string = formatTimestamp( pub_tsm );
+				// 把新的动态ID加入本地数据库
+				await bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, card.id_str );
 				// 判断动态是否已经过时
 				if ( Date.now() - pub_tsm > limitMillisecond ) {
 					bot.logger.info( `[hot-news] [${ name }]-[${ pub_tss }]发布的动态[${ card.id_str }]已过时不再推送!` )
-					// 把新的动态ID加入本地数据库
-					await bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, card.id_str );
 					continue;
 				}
-				
+
 				// 把动态信息缓存，后续渲染截图需要使用
 				await bot.redis.setString( `${ DB_KEY.bili_dynamic_info_key }.${ card.id_str }`, JSON.stringify( card ), config.biliDynamicApiCacheTime );
 				
 				// 专栏类型
 				if ( card.type === 'DYNAMIC_TYPE_ARTICLE' ) {
-					await this.articleHandle( card, chatInfo );
+					this.articleHandle( card, chatInfo ).then();
 					i++;
 				} else if ( card.type === 'DYNAMIC_TYPE_LIVE_RCMD' ) {
 					// do nothing
@@ -94,10 +94,17 @@ export class BiliDynamicImpl implements NewsService {
 						forward_num,
 						archive
 					};
-					await this.normalDynamicHandle( dynamicInfo, chatInfo );
+					this.normalDynamicHandle( dynamicInfo, chatInfo ).then();
 					i++;
 				} else {
-					bot.logger.info( `[hot-news] 获取到B站[${ name }]-[${ pub_tss }]发布的新动态 [${ card.id_str }] [${ card.modules.module_dynamic.desc?.text }]` );
+					let loggerMsg: string | undefined;
+					if ( card.modules.module_dynamic.major?.type == 'MAJOR_TYPE_OPUS' ) {
+						const opus = card.modules.module_dynamic.major?.opus;
+						loggerMsg = opus?.title || opus?.summary.text;
+					} else {
+						loggerMsg = card.modules.module_dynamic.desc?.text;
+					}
+					bot.logger.info( `[hot-news] 获取到B站[${ name }]-[${ pub_tss }]发布的新动态 [${ card.id_str }] [${ loggerMsg }]` );
 					const dynamicInfo: DynamicInfo = {
 						id: card.id_str,
 						name,
@@ -108,12 +115,10 @@ export class BiliDynamicImpl implements NewsService {
 						comment_num,
 						forward_num
 					};
-					await this.normalDynamicHandle( dynamicInfo, chatInfo );
+					this.normalDynamicHandle( dynamicInfo, chatInfo ).then();
 					i++;
 				}
-				
-				// 把新的动态ID加入本地数据库
-				await bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, card.id_str );
+				await wait( 1500 );
 			}
 			
 			if ( config.pushLimit.enable && i > config.pushLimit.limitTimes ) {
@@ -193,7 +198,6 @@ export class BiliDynamicImpl implements NewsService {
 			}
 		}
 		await MessageMethod.sendMsg( type, targetId, imgMsg );
-		await wait( 1500 );
 	}
 	
 	private async normalDynamicHandle( {
@@ -236,9 +240,7 @@ export class BiliDynamicImpl implements NewsService {
 			}
 		}
 		if ( ok ) {
-			// 如果是视频投稿，那么把cover转为 ImageElem 对象
 			if ( archive ) {
-				archive.cover = segment.image( <string>archive.cover, true, 60 );
 				archive.jump_url = "https:" + archive.jump_url;
 				const params: Record<string, any> = {
 					id,
@@ -284,10 +286,5 @@ export class BiliDynamicImpl implements NewsService {
 			message = MessageMethod.parseTemplate( config.errorMsgTemplate, params );
 		}
 		await MessageMethod.sendMsg( type, targetId, message );
-		await wait( 1500 );
-	}
-	
-	private completeProtocol( base64Str: string ): string {
-		return `base64://${ base64Str }`;
 	}
 }

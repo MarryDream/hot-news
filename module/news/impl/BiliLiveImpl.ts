@@ -1,5 +1,5 @@
 import { NewsService } from "#/hot-news/module/news/NewsService";
-import { ImageElem, segment, Sendable } from "icqq";
+import { ImageElem, segment, Sendable } from "@/modules/lib";
 import { DB_KEY } from "#/hot-news/util/constants";
 import { BiliLiveInfo, ChatInfo } from "#/hot-news/types/type";
 import { getBiliLiveStatus } from "#/hot-news/util/api";
@@ -43,7 +43,7 @@ export class BiliLiveImpl implements NewsService {
 					} = live;
 					const liveTime: string = live_time === 0 ? "00:00:00" : msToHumanize( Date.now() - live_time * 1000 );
 					const cacheTime: number = config.biliLiveCacheTime * 60 * 60;
-					let img: ImageElem = segment.image( cover, true, 60 );
+					let img: ImageElem = segment.image( cover );
 					if ( config.screenshotType === 2 ) {
 						const res: RenderResult = await renderer.asSegment(
 							"/live",

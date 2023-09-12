@@ -1,15 +1,8 @@
 import axios, { AxiosError } from "axios";
 import bot from 'ROOT';
-import { formatDate } from "#/hot-news/util/tools";
+import { formatDate, get_uuid } from "#/hot-news/util/tools";
 import { DB_KEY } from "#/hot-news/util/constants";
-import {
-	BiliDynamicCard,
-	BiliDynamicForwardCard,
-	BiliLiveInfo,
-	LiveUserInfo,
-	News,
-	UpCardInfo
-} from "#/hot-news/types/type";
+import { BiliDynamicCard, BiliLiveInfo, LiveUserInfo, News, UpCardInfo } from "#/hot-news/types/type";
 import moment from "moment";
 import { config } from "#/hot-news/init";
 import fetch, { Response } from "node-fetch";
@@ -46,52 +39,6 @@ const BILIBILI_DYNAMIC_HEADERS = {
 	"Cookie": ""
 }
 
-
-function get_uuid() {
-	let e = get_part_str( 8 )
-		, t = get_part_str( 4 )
-		, r = get_part_str( 4 )
-		, n = get_part_str( 4 )
-		, o = get_part_str( 12 )
-		, i = ( new Date ).getTime();
-	return e + "-" + t + "-" + r + "-" + n + "-" + o + add_zero_char( ( i % 1e5 ).toString(), 5 ) + "infoc"
-}
-
-function get_part_str( e ) {
-	let t = ""
-	for ( let r = 0; r < e; r++ )
-		t += dec_to_hex( 16 * Math.random() );
-	return add_zero_char( t, e )
-}
-
-function add_zero_char( e, t ) {
-	let r = "";
-	if ( e.length < t )
-		for ( let n = 0; n < t - e.length; n++ )
-			r += "0";
-	return r + e
-}
-
-
-function dec_to_hex( e ) {
-	return Math.ceil( e ).toString( 16 ).toUpperCase()
-}
-
-async function getCookies( uid: number ): Promise<Record<string, string>> {
-	BILIBILI_DYNAMIC_HEADERS.Referer.replace( "$", `${ uid }` )
-	BILIBILI_DYNAMIC_HEADERS.Cookie = `_uuid=${ get_uuid() }`
-	return axios.get( `https://space.bilibili.com/${ uid }/dynamic`, {
-		headers: BILIBILI_DYNAMIC_HEADERS
-	} ).then( resp => {
-		const exec = /<meta name="spm_prefix" content="([^"]+?)">/.exec( resp.data );
-		return {
-			spm_prefix: exec ? exec[1] : "",
-			cookies: resp.headers["set-cookie"]?.filter( value => !!value )
-				.map( value => value.trim().split( ";" )[0] ).join( ";" ) || ""
-		}
-	} )
-}
-
 export const getNews: ( channel?: string ) => Promise<string> = async ( channel: string = 'toutiao' ) => {
 	let date = formatDate( new Date() );
 	let key = `hot_news.news.${ channel }.${ date }`;
@@ -99,7 +46,7 @@ export const getNews: ( channel?: string ) => Promise<string> = async ( channel:
 	if ( news ) {
 		return Promise.resolve( news );
 	}
-	
+
 	return new Promise( ( resolve, reject ) => {
 		axios.get( API[channel], { headers: NEWS_HEADERS, timeout: 5000 } ).then( res => {
 			if ( res.status !== 200 ) {
@@ -107,13 +54,13 @@ export const getNews: ( channel?: string ) => Promise<string> = async ( channel:
 				reject( '获取热点新闻失败' )
 				return;
 			}
-			
+
 			if ( res.data.status !== 0 ) {
 				bot.logger.error( `获取[${ channel }]热点新闻失败: ${ res.data.msg }` )
 				reject( '获取热点新闻失败' )
 				return;
 			}
-			
+
 			const {
 				site: {
 					attrs: { cn },
@@ -133,20 +80,22 @@ export const getNews: ( channel?: string ) => Promise<string> = async ( channel:
 	} );
 }
 
-/**
- * 获取B站空间动态列表
- */
-export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: number ) => Promise<BiliDynamicCard[]> = async ( uid, no_cache = false, cache_time = 60 ) => {
-	const dynamic = await bot.redis.getString( `${ DB_KEY.bili_dynamic_key }.${ uid }` );
-	if ( dynamic ) {
-		return Promise.resolve( JSON.parse( dynamic ) );
-	}
-	
-	// 已经发布的动态ID
-	const dynamicIdList: string[] = await bot.redis.getSet( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }` );
-	
-	const cookies = await getCookies( uid );
-	
+async function getCookies( uid: number ): Promise<Record<string, string>> {
+	BILIBILI_DYNAMIC_HEADERS.Referer = BILIBILI_DYNAMIC_HEADERS.Referer.replace( /\$|\d+/, `${ uid }` )
+	BILIBILI_DYNAMIC_HEADERS.Cookie = `_uuid=${ get_uuid() }`
+	return axios.get( `https://space.bilibili.com/${ uid }/dynamic`, {
+		headers: BILIBILI_DYNAMIC_HEADERS
+	} ).then( resp => {
+		const exec = /<meta name="spm_prefix" content="([^"]+?)">/.exec( resp.data );
+		return {
+			spm_prefix: exec ? exec[1] : "",
+			cookies: resp.headers["set-cookie"]?.filter( value => !!value )
+				.map( value => value.trim().split( ";" )[0] ).join( ";" ) || ""
+		}
+	} )
+}
+
+async function submitGateway( cookies: Record<string, string> ): Promise<void> {
 	await axios.post( "https://api.bilibili.com/x/internal/gaia-gateway/ExClimbWuzhi", {
 		headers: BILIBILI_DYNAMIC_HEADERS,
 		data: {
@@ -157,9 +106,30 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 			}
 		}
 	} )
+}
+
+/**
+ * 获取B站空间动态列表
+ */
+export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: number ) => Promise<BiliDynamicCard[]> = async ( uid, no_cache = false, cache_time = 60 ) => {
+	const dynamic = await bot.redis.getString( `${ DB_KEY.bili_dynamic_key }.${ uid }` );
+	if ( dynamic ) {
+		return Promise.resolve( JSON.parse( dynamic ) );
+	}
 	
-	BILIBILI_DYNAMIC_HEADERS.Referer = BILIBILI_DYNAMIC_HEADERS.Referer.replace( "$", uid.toString( 10 ) );
-	BILIBILI_DYNAMIC_HEADERS.Cookie = cookies['cookies'];
+	// 获取Cookie
+	if ( !config.cookie ) {
+		const cookies = await getCookies( uid );
+		await submitGateway( cookies );
+		BILIBILI_DYNAMIC_HEADERS.Referer = BILIBILI_DYNAMIC_HEADERS.Referer.replace( /\$|\d+/, uid.toString( 10 ) );
+		BILIBILI_DYNAMIC_HEADERS.Cookie = cookies['cookies'];
+	} else {
+		BILIBILI_DYNAMIC_HEADERS.Referer = BILIBILI_DYNAMIC_HEADERS.Referer.replace( /\$|\d+/, uid.toString( 10 ) );
+		BILIBILI_DYNAMIC_HEADERS.Cookie = config.cookie;
+	}
+	
+	// 已经发布的动态ID
+	const dynamicIdList: string[] = await bot.redis.getSet( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }` );
 	return new Promise( ( resolve ) => {
 		axios.get( API.biliDynamic, {
 			params: {
@@ -199,9 +169,8 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 						let result: boolean = true;
 						// 转发动态去匹配原动态内容及tag
 						if ( card.type === value.type && value.type === 'DYNAMIC_TYPE_FORWARD' ) {
-							const forwardCard = <BiliDynamicForwardCard>card;
-							const richTextNodes = forwardCard.orig.modules.module_dynamic.desc?.rich_text_nodes || [];
-							const text = forwardCard.orig.modules.module_dynamic.desc?.text || "";
+							const richTextNodes = card.orig!.modules.module_dynamic.desc?.rich_text_nodes || [];
+							const text = card.orig!.modules.module_dynamic.desc?.text || "";
 							const content: string = richTextNodes?.map( node => node.text ).join() + text;
 							result = value.reg ?
 								!new RegExp( value.reg ).test( content )
@@ -333,7 +302,6 @@ export const getBiliLiveStatus: ( uid: number, no_cache?: boolean, cache_time?: 
 		return Promise.resolve( JSON.parse( live_info ) );
 	}
 	
-	BILIBILI_DYNAMIC_HEADERS.Cookie = config.cookie;
 	return new Promise( ( resolve ) => {
 		axios.get( API.bili_live_status, {
 			params: {

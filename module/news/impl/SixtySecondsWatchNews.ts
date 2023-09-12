@@ -1,5 +1,5 @@
 import { NewsService } from "#/hot-news/module/news/NewsService";
-import { segment, Sendable } from "icqq";
+import { segment, Sendable } from "@/modules/lib";
 import { wait } from "#/hot-news/util/tools";
 import { config } from "#/hot-news/init";
 import bot from "ROOT";
@@ -14,7 +14,7 @@ import { get60s } from "#/hot-news/util/api";
 export class SixtySecondsWatchNews implements NewsService {
 	async getInfo( channel?: string ): Promise<Sendable> {
 		const api = await get60s();
-		return segment.image( api, true, 60 );
+		return segment.image( api );
 	}
 	
 	async handler(): Promise<void> {

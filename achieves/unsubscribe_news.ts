@@ -2,10 +2,10 @@ import { defineDirective, InputParameter } from "@/modules/command";
 import { CHANNEL_NAME, DB_KEY } from "#/hot-news/util/constants";
 import { getChannelKey, getChatInfo } from "#/hot-news/util/tools";
 import { MessageType } from "@/modules/message";
-import Database from "@/modules/database";
-import { GroupMessageEvent, MessageRet, Sendable } from "icqq";
+import { GroupMessageEvent } from "@/modules/lib";
 
-export default defineDirective( "order", async ( { sendMessage, messageData, redis, client }: InputParameter ) => {
+export default defineDirective( "order", async ( i: InputParameter ) => {
+	const { sendMessage, messageData, redis } = i;
 	const channel = messageData.raw_message;
 	const { type, targetId } = getChatInfo( messageData );
 	if ( type === MessageType.Group ) {
@@ -24,13 +24,13 @@ export default defineDirective( "order", async ( { sendMessage, messageData, red
 		return;
 	}
 	if ( channel === CHANNEL_NAME.genshin || ( channelKey === 401742377 ) ) {
-		await unsubscribeBili( targetId, member, 401742377, redis, sendMessage );
+		await unsubscribeBili( targetId, member, 401742377, i );
 		return;
 	}
 	
 	// 处理B站UP主订阅
 	if ( typeof channelKey === "number" ) {
-		await unsubscribeBili( targetId, member, channelKey, redis, sendMessage );
+		await unsubscribeBili( targetId, member, channelKey, i );
 		return;
 	}
 	
@@ -57,7 +57,10 @@ export default defineDirective( "order", async ( { sendMessage, messageData, red
 	}
 } );
 
-async function unsubscribeBili( targetId: number, member: string, uid: number, redis: Database, sendMessage: ( content: Sendable, allowAt?: boolean ) => Promise<MessageRet> ) {
+async function unsubscribeBili( targetId: number, member: string, uid: number, {
+	redis,
+	sendMessage
+}: InputParameter ) {
 	let exist: boolean = await redis.existSetMember( DB_KEY.sub_bili_ids_key, member )
 	if ( !exist ) {
 		await sendMessage( `[${ targetId }]未订阅任何B站UP的动态和直播` );

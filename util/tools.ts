@@ -4,7 +4,6 @@ import { CHANNEL_NAME } from "#/hot-news/util/constants";
 import { exec } from "child_process";
 import FileManagement from "@/modules/file";
 import { BOT } from "@/modules/bot";
-import { config } from "#/hot-news/init";
 import bot from "ROOT";
 
 export const formatDate: ( date: Date, format?: string ) => string = ( date, format = "-" ) => {
@@ -47,13 +46,13 @@ export const getChannelKey: ( channel: string ) => ( string | number | null ) = 
 	if ( isNumber ) {
 		return parseInt( reg.exec( channel )![0] );
 	}
-	
+
 	for ( let k in CHANNEL_NAME ) {
 		if ( CHANNEL_NAME[k] === channel ) {
 			return k;
 		}
 	}
-	
+
 	return null;
 }
 
@@ -86,7 +85,7 @@ async function execHandle( command: string ): Promise<string> {
 	} )
 }
 
-function checkDependencies( file: FileManagement, ...dependencies ): string[] {
+function checkDependencies( file: FileManagement, ...dependencies: string[] ): string[] {
 	const path: string = file.getFilePath( "package.json", "root" );
 	const { dependencies: dep } = require( path );
 	// 过滤出未安装的依赖
@@ -96,14 +95,11 @@ function checkDependencies( file: FileManagement, ...dependencies ): string[] {
 
 export async function installDep( { logger, file }: BOT ): Promise<void> {
 	logger.info( "[hot-news] 开始检测插件需要的依赖是否已安装..." );
-	const dependencies: string[] = [];
-	if ( config.subscribeMoyu.enable && config.subscribeMoyu.apiType === 2 ) {
-		dependencies.push( "sharp" );
-	}
+	const dependencies: string[] = [ "qrcode" ];
 	const uninstall_dependencies: string[] = checkDependencies( file, ...dependencies );
 	for ( let uni_dep of uninstall_dependencies ) {
 		logger.info( `[hot-news] 检测到 ${ uni_dep } 依赖尚未安装，将自动安装该依赖...` )
-		const stdout = await execHandle( `npm i ${ uni_dep }` );
+		const stdout = await execHandle( `pnpm add ${ uni_dep }` );
 		logger.info( stdout );
 	}
 	logger.info( "[hot-news] 所有插件需要的依赖已安装" );
@@ -139,4 +135,34 @@ export function version_compare( v1, v2 ): number {
 	} else {
 		return ( arr1.length > arr2.length ) ? 1 : -1;
 	}
+}
+
+export function get_uuid(): string {
+	let e = get_part_str( 8 )
+		, t = get_part_str( 4 )
+		, r = get_part_str( 4 )
+		, n = get_part_str( 4 )
+		, o = get_part_str( 12 )
+		, i = ( new Date ).getTime();
+	return e + "-" + t + "-" + r + "-" + n + "-" + o + add_zero_char( ( i % 1e5 ).toString(), 5 ) + "infoc"
+}
+
+function get_part_str( e: number ): string {
+	let t = ""
+	for ( let r = 0; r < e; r++ )
+		t += dec_to_hex( 16 * Math.random() );
+	return add_zero_char( t, e )
+}
+
+function add_zero_char( e: string, t: number ): string {
+	let r = "";
+	if ( e.length < t )
+		for ( let n = 0; n < t - e.length; n++ )
+			r += "0";
+	return r + e
+}
+
+
+function dec_to_hex( e ): string {
+	return Math.ceil( e ).toString( 16 ).toUpperCase()
 }

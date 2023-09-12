@@ -1,4 +1,4 @@
-import { Sendable } from "icqq";
+import { Sendable } from "@/modules/lib";
 
 export interface NewsService {
 	

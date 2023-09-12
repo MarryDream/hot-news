@@ -1,5 +1,5 @@
 import { NewsService } from "#/hot-news/module/news/NewsService";
-import { segment, Sendable } from "icqq"
+import { segment, Sendable } from "@/modules/lib"
 import bot from "ROOT";
 import { DB_KEY } from "#/hot-news/util/constants";
 import { ChatInfo } from "#/hot-news/types/type";
@@ -19,7 +19,7 @@ export class MessAroundServiceImpl implements NewsService {
 		}
 		
 		if ( url ) {
-			return segment.image( url, true, 60 );
+			return segment.image( url );
 		}
 		return '未获取到摸鱼日报';
 	}

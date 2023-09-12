@@ -1,5 +1,4 @@
 import { MessageType } from "@/modules/message";
-import { ImageElem } from "icqq";
 
 /**
  * @interface
@@ -21,14 +20,7 @@ export interface BiliDynamicCard {
 	};
 	type: BiliDynamicType;
 	visible: boolean;
-}
-
-/**
- * 转发动态类型
- */
-export interface BiliDynamicForwardCard extends BiliDynamicCard {
-	type: "DYNAMIC_TYPE_FORWARD";
-	orig: BiliDynamicCard;
+	orig?: BiliDynamicCard;
 }
 
 export interface Comment {
@@ -274,13 +266,14 @@ type RichTextNodeType =
 
 export type RichTextNode = RichTextNodeTopic | RichTextNodeText | RichTextNodeEmoji
 	| RichTextNodeGoods | RichTextNodeWeb | RichTextNodeBV | RichTextNodeOGVSeason
-	| RichTextNodeMail | RichTextNodeAt | RichTextNodeLottery | RichTextNodeVote;
+	| RichTextNodeMail | RichTextNodeAt | RichTextNodeLottery | RichTextNodeVote
+	| RichTextNodeAV;
 
 export interface RichTextNodeVote {
 	orig_text: string;
 	text: string;
 	rid: string; // 投票ID
-	type: "RICH_TEXT_NODE_TYPE_LOTTERY";// 投票
+	type: "RICH_TEXT_NODE_TYPE_VOTE";// 投票
 }
 
 export interface RichTextNodeLottery {
@@ -322,6 +315,14 @@ export interface RichTextNodeBV {
 	rid: string; // BV号
 	text: string;// 视频标题
 	type: "RICH_TEXT_NODE_TYPE_BV";
+}
+
+export interface RichTextNodeAV {
+	type: "RICH_TEXT_NODE_TYPE_AV";
+	jump_url: string;// 跳转链接
+	orig_text: string;// 视频链接
+	rid: string; // AV号
+	text: string;// 视频标题
 }
 
 export interface RichTextNodeOGVSeason {
@@ -381,14 +382,22 @@ export interface BiliDynamicModuleDynamic {
 export interface BiliDynamicMajorOpus {
 	type: "MAJOR_TYPE_OPUS";
 	opus: {
+		fold_action: string[];
 		jump_url: string;
-		pics: string[];
+		pics: Opus_Pic[];
 		summary: Summary;
 		title: string;
 	}
 }
 
-interface Summary {
+export interface Opus_Pic {
+	width: number;
+	height: number;
+	size: number;
+	url: string;
+}
+
+export interface Summary {
 	rich_text_nodes: RichTextNodeText[];
 	text: string;
 }
@@ -479,7 +488,7 @@ export interface BiliDynamicMajorArchiveInfo {
 		text: string
 	};
 	bvid: string;
-	cover: string | ImageElem;
+	cover: string;
 	desc: string;
 	disable_preview: boolean;
 	duration_text: string;
@@ -508,7 +517,7 @@ export interface BiliDynamicMajorArticle {
 	}
 }
 
-interface DrawItem {
+export interface DrawItem {
 	height: number;
 	size: number;
 	src: string;

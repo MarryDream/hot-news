@@ -10,6 +10,7 @@ import { ChatInfo } from "#/hot-news/types/type";
 import { MessageType } from "@/modules/message";
 import { BOT } from "@/modules/bot";
 import { cancelJob } from "node-schedule";
+import { installDep } from "#/hot-news/util/tools";
 
 export let renderer: Renderer;
 export let config: INewsConfig;
@@ -23,7 +24,7 @@ export async function clearSubscribe( targetId: number, messageType: MessageType
 		await redis.delSetMember( DB_KEY.sub_bili_ids_key, member );
 		await redis.delHash( DB_KEY.notify_bili_ids_key, `${ targetId }` );
 		await redis.deleteKey( `${ DB_KEY.limit_bili_dynamic_time_key }.${ targetId }` );
-		await logger.info( ` [hot-news] 已为[${ targetId }]取消订阅BiliBili动态` );
+		logger.info( ` [hot-news] 已为[${ targetId }]取消订阅BiliBili动态` );
 	}
 	
 	// 处理新闻订阅
@@ -31,7 +32,7 @@ export async function clearSubscribe( targetId: number, messageType: MessageType
 	if ( existNotify ) {
 		await redis.delSetMember( DB_KEY.ids, member );
 		await redis.delHash( DB_KEY.channel, `${ targetId }` );
-		await logger.info( ` [hot-news] 已为[${ targetId }]已取消订阅新闻服务` );
+		logger.info( ` [hot-news] 已为[${ targetId }]已取消订阅新闻服务` );
 	}
 }
 
@@ -48,7 +49,7 @@ export default definePlugin( {
 	repo: {
 		owner: "BennettChina",
 		repoName: "hot-news",
-		ref: "main"
+		ref: "v3"
 	},
 	subscribe: [
 		{
@@ -92,16 +93,14 @@ export default definePlugin( {
 	],
 	mounted( params ) {
 		config = params.configRegister( "hot-news", NewsConfig.init );
-		// config.on( "refresh", ( newCfg, oldCfg ) => {
-		// 	Plugin.getInstance( bot ).getPluginInfoByAlias( oldCfg.aliases[0] )[0].aliases = newCfg.aliases;
-		// } )
-		// const pluginList = Plugin.getInstance(bot).pluginList;
-		// pluginList['hot-news'].aliases = conf.aliases;
 		scheduleNews = new ScheduleNews( bot, config );
-		params.refresh.register( scheduleNews );
+		params.refreshRegister( scheduleNews );
 		
 		/* 实例化渲染器 */
 		renderer = params.renderRegister( "#app" );
+		
+		// 安装依赖
+		installDep( params ).then();
 	},
 	unmounted() {
 		// 卸载插件时把定时任务清掉

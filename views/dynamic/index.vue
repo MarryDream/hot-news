@@ -4,7 +4,6 @@ import { urlParamsGet } from "@/utils/url";
 import $http from "#/hot-news/util/http";
 import {
 	BiliDynamicCard,
-	BiliDynamicForwardCard,
 	BiliDynamicMajorArchive,
 	BiliDynamicModuleAuthor,
 	BiliDynamicModuleDynamic,
@@ -67,13 +66,13 @@ const getData = async () => {
 	type.value = data.value!.type;
 	stat.value = data.value?.modules.module_stat || null;
 	if ( data.value!.type === "DYNAMIC_TYPE_FORWARD" ) {
-		const forward = <BiliDynamicForwardCard>data.value;
+		const forward = data.value!.orig!;
 		face.value = {
-			avatar: forward.orig.modules.module_author.face,
-			name: forward.orig.modules.module_author.name,
-			nicknameColor: forward.orig.modules.module_author.vip.nickname_color
+			avatar: forward.modules.module_author.face,
+			name: forward.modules.module_author.name,
+			nicknameColor: forward.modules.module_author.vip.nickname_color
 		}
-		orig.value = forward.orig;
+		orig.value = forward;
 	}
 }
 

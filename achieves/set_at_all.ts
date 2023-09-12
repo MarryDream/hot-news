@@ -1,5 +1,5 @@
 import { defineDirective, InputParameter } from "@/modules/command";
-import { GroupMessageEvent, Member } from "icqq";
+import { GroupMessageEvent } from "@/modules/lib";
 import { DB_KEY } from "#/hot-news/util/constants";
 import { getLiveUserInfo } from "#/hot-news/util/api";
 import { LiveUserInfo } from "#/hot-news/types/type";
@@ -12,8 +12,12 @@ export default defineDirective( "order", async ( { sendMessage, messageData, red
 		return;
 	}
 	
-	const member: Member = client.pickMember( group_id, client.uin );
-	if ( !member.is_admin ) {
+	const member = await client.getGroupMemberInfo( group_id, client.uin );
+	if ( member.status !== 'ok' ) {
+		await sendMessage( 'BOT 的群权限查询失败' );
+		return;
+	}
+	if ( member.data.role === 'member' ) {
 		await sendMessage( 'BOT 无群管理权限无法使用@全体功能' );
 		return;
 	}

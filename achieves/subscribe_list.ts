@@ -4,7 +4,7 @@ import { MessageType } from "@/modules/message";
 import { CHANNEL_NAME, DB_KEY } from "#/hot-news/util/constants";
 import { getBiliLiveStatus } from "#/hot-news/util/api";
 import { config } from "#/hot-news/init";
-import { GroupMessageEvent } from "icqq";
+import { GroupMessageEvent } from "@/modules/lib";
 
 export default defineDirective( "order", async ( { sendMessage, messageData, redis }: InputParameter ) => {
 	const { type, targetId } = getChatInfo( messageData );

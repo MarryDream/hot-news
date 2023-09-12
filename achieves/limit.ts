@@ -2,7 +2,7 @@ import { defineDirective, InputParameter } from "@/modules/command";
 import { getChatInfo } from "#/hot-news/util/tools";
 import { MessageType } from "@/modules/message";
 import { DB_KEY } from "#/hot-news/util/constants";
-import { GroupMessageEvent } from "icqq";
+import { GroupMessageEvent } from "@/modules/lib";
 
 export default defineDirective( "order", async ( { sendMessage, messageData, redis }: InputParameter ) => {
 	const { type, targetId } = getChatInfo( messageData );
