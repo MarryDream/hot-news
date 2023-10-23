@@ -1,0 +1,9 @@
+{
+  "name" : "hot-news",
+  "private" : true,
+  "author" : "Bennett",
+  "description" : "消息推送服务插件",
+  "version" : "2.0.0",
+  "dependencies" : {
+  }
+}

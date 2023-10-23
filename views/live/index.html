@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta content="never" name="referrer">
+	<title>Live</title>
+<!--	<script src="https://unpkg.com/vue@3.1.1/dist/vue.global.prod.js"></script>-->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+	<link href="../../assets/styles/root.css" rel="stylesheet"/>
+	<link href="../../assets/styles/qrcode.css" rel="stylesheet"/>
+	<link href="../../assets/styles/avatar.css" rel="stylesheet"/>
+	<link href="./styles/live.css" rel="stylesheet"/>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script type="importmap">
+	{
+	  "imports": {
+		"vue": "https://unpkg.com/vue@3.2.47/dist/vue.esm-browser.prod.js"
+	  }
+	}
+</script>
+<script type="module">
+	import App from "./components/index.js";
+	import { createApp } from "vue";
+
+	createApp(App).mount("#app");
+</script>
+</body>
+</html>
+
+<style>
+	#app {
+		width: 480px;
+	}
+
+	@font-face {
+		font-family: 'fanscard';
+		src: url('//s1.hdslb.com/bfs/static/jinkela/mall-h5/asserts/fansCard.ttf');
+	}
+
+	@font-face {
+		font-family: "HN-Font";
+		src: url("../../assets/fonts/HN-Font.woff2") format("woff2"),
+		url("../../assets/fonts/HN-Font.woff") format("woff"),
+		url("../../assets/fonts/HN-Font.ttf"),
+		url("../../assets/fonts/HN-Font.ttc");
+	}
+
+	body, html {
+		font-family: HN-Font, PingFang SC, Helvetica Neue, Helvetica, Arial, Microsoft Yahei, Hiragino Sans GB, Heiti SC, WenQuanYi Micro Hei, sans-serif;
+		background-color: #fff;
+	}
+
+	div {
+		box-sizing: border-box;
+	}
+
+	svg {
+		fill: currentColor;
+		height: 1em;
+		width: 1em;
+	}
+
+	svg:not(:root) {
+		overflow-clip-margin: content-box;
+		overflow: hidden;
+	}
+
+	img {
+		overflow-clip-margin: content-box;
+		overflow: clip;
+	}
+</style>

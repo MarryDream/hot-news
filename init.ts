@@ -10,7 +10,6 @@ import { ChatInfo } from "#/hot-news/types/type";
 import { MessageType } from "@/modules/message";
 import { BOT } from "@/modules/bot";
 import { cancelJob } from "node-schedule";
-import { installDep } from "#/hot-news/util/tools";
 
 export let renderer: Renderer;
 export let config: INewsConfig;
@@ -40,9 +39,6 @@ export default definePlugin( {
 	name: "新闻订阅",
 	aliases: [ "消息订阅", "新闻订阅", "热点新闻" ],
 	cfgList,
-	renderer: {
-		mainFiles: [ "index" ]
-	},
 	server: {
 		routers
 	},
@@ -97,10 +93,7 @@ export default definePlugin( {
 		params.refreshRegister( scheduleNews );
 		
 		/* 实例化渲染器 */
-		renderer = params.renderRegister( "#app" );
-		
-		// 安装依赖
-		installDep( params ).then();
+		renderer = params.renderRegister( "#app", "views" );
 	},
 	unmounted() {
 		// 卸载插件时把定时任务清掉

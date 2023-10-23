@@ -5,16 +5,16 @@
  *             <p>2时转为 yyyy-MM-dd hh:mm</p>
  * @return string
  */
-export function toHumanize( unixTimestamp: number, type: number = 1 ): string {
-	const date: Date = new Date( unixTimestamp * 1000 );
-	const hour: number = date.getHours();
-	const minute: number = date.getMinutes();
-	const m: string = minute < 10 ? `0${ minute }` : `${ minute }`;
-	const h: string = hour < 10 ? `0${ hour }` : `${ hour }`;
+export function toHumanize( unixTimestamp, type = 1 ) {
+	const date = new Date( unixTimestamp * 1000 );
+	let hour = date.getHours();
+	let minute = date.getMinutes();
+	minute = minute < 10 ? "0" + minute : minute;
+	hour = hour < 10 ? "0" + hour : hour;
 	
 	return type === 1
-		? `${ date.getFullYear() }年${ date.getMonth() + 1 }月${ date.getDate() }日 ${ h }:${ m }`
-		: `${ date.getFullYear() }-${ date.getMonth() + 1 }-${ date.getDate() } ${ h }:${ m }`;
+		? `${ date.getFullYear() }年${ date.getMonth() + 1 }月${ date.getDate() }日 ${ hour }:${ minute }`
+		: `${ date.getFullYear() }-${ date.getMonth() + 1 }-${ date.getDate() } ${ hour }:${ minute }`;
 }
 
 /**
@@ -23,7 +23,7 @@ export function toHumanize( unixTimestamp: number, type: number = 1 ): string {
  * @param height
  * @returns {{width, height}|{width: number, height: number}|{width: number, height: number}|{width: number, height: number}|*}
  */
-export function getStyle( width: number, height: number ): { width: number, height: number } {
+export function getStyle( width, height ) {
 	let e = width
 		, n = height;
 	if ( e <= 120 || n <= 120 )
@@ -91,8 +91,8 @@ export function getStyle( width: number, height: number ): { width: number, heig
 /**
  *int转RGB
  */
-export function intToColor( argb: number ): string {
-	let r: number, g: number, b: number;
+export function intToColor( argb ) {
+	let r, g, b;
 	r = ( argb & 0xff0000 ) >> 16;
 	g = ( argb & 0xff00 ) >> 8;
 	b = ( argb & 0xff );
