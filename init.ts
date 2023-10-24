@@ -10,9 +10,10 @@ import { ChatInfo } from "#/hot-news/types/type";
 import { MessageType } from "@/modules/message";
 import { BOT } from "@/modules/bot";
 import { cancelJob } from "node-schedule";
+import { ExportConfig } from "@/modules/config";
 
 export let renderer: Renderer;
-export let config: INewsConfig;
+export let config: ExportConfig<INewsConfig>;
 export let scheduleNews: ScheduleNews;
 
 export async function clearSubscribe( targetId: number, messageType: MessageType, { redis, logger }: BOT ) {
@@ -37,7 +38,6 @@ export async function clearSubscribe( targetId: number, messageType: MessageType
 
 export default definePlugin( {
 	name: "新闻订阅",
-	aliases: [ "消息订阅", "新闻订阅", "热点新闻" ],
 	cfgList,
 	server: {
 		routers
@@ -91,6 +91,10 @@ export default definePlugin( {
 		config = params.configRegister( "hot-news", NewsConfig.init );
 		scheduleNews = new ScheduleNews( bot, config );
 		params.refreshRegister( scheduleNews );
+		params.setAlias( config.aliases );
+		config.on( "refresh", newCfg => {
+			params.setAlias( newCfg.aliases );
+		} );
 		
 		/* 实例化渲染器 */
 		renderer = params.renderRegister( "#app", "views" );
