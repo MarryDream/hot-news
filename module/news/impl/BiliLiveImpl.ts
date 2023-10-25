@@ -46,7 +46,7 @@ export class BiliLiveImpl implements NewsService {
 					let img: ImageElem = segment.image( cover );
 					if ( config.screenshotType === 2 ) {
 						const res: RenderResult = await renderer.asSegment(
-							"/live",
+							"/live/index.html",
 							{ uid: uid },
 							this.viewPort
 						);

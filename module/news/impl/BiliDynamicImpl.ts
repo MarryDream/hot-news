@@ -177,7 +177,7 @@ export class BiliDynamicImpl implements NewsService {
 		let imgMsg: Sendable;
 		if ( config.screenshotType === 2 ) {
 			const res: RenderResult = await renderer.asSegment(
-				"/dynamic",
+				"/dynamic/index.html",
 				{ dynamicId: card.id_str },
 				this.viewPort
 			);
@@ -220,7 +220,7 @@ export class BiliDynamicImpl implements NewsService {
 		let ok: boolean = false;
 		if ( config.screenshotType === 2 ) {
 			const res: RenderResult = await renderer.asSegment(
-				"/dynamic",
+				"/dynamic/index.html",
 				{ dynamicId: id },
 				this.viewPort
 			);
