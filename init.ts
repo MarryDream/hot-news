@@ -42,6 +42,7 @@ export default definePlugin( {
 	server: {
 		routers
 	},
+	publicDirs: [ "assets", "views", "components" ],
 	repo: {
 		owner: "BennettChina",
 		repoName: "hot-news",
