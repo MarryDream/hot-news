@@ -14,7 +14,7 @@ git clone https://github.com/BennettChina/hot-news.git
 ### 网差用这两个
 
 ```shell
-git clone https://ghproxy.com/https://github.com/BennettChina/hot-news.git
+git clone https://mirror.ghproxy.com/https://github.com/BennettChina/hot-news.git
 ```
 
 需要注意的时 `GitClone` 镜像同步比较慢(夜间同步)，因此如果 `pull` 时未拉取到内容可将插件删掉用 `Ghproxy` 重新克隆。
@@ -23,7 +23,7 @@ git clone https://ghproxy.com/https://github.com/BennettChina/hot-news.git
 git clone https://gitclone.com/github.com/BennettChina/hot-news.git
 ```
 
-> 感谢[GitClone](https://gitclone.com/) 和 [GitHub Proxy](https://ghproxy.com/) 提供的镜像服务！
+> 感谢[GitClone](https://gitclone.com/) 和 [GitHub Proxy](https://mirror.ghproxy.com/) 提供的镜像服务！
 
 ## 使用方法
 
