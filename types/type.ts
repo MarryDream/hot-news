@@ -13,9 +13,9 @@ export interface BiliDynamicCard {
 		module_dynamic: BiliDynamicModuleDynamic;
 		module_tag: { text: string };
 		module_stat: {
-			comment: Comment;
-			forward: Forward;
-			like: Like;
+			comment: Stat;
+			forward: Stat;
+			like: Stat;
 		};
 	};
 	type: BiliDynamicType;
@@ -23,21 +23,11 @@ export interface BiliDynamicCard {
 	orig?: BiliDynamicCard;
 }
 
-export interface Comment {
-	count: number;
-	forbidden: boolean;
-	hidden: boolean;
-}
-
-export interface Forward {
-	count: number;
-	forbidden: boolean;
-}
-
-export interface Like {
+export interface Stat {
 	count: number;
 	forbidden: boolean;
 	status: boolean;
+	hidden: boolean;
 }
 
 /**
@@ -689,4 +679,75 @@ export interface UpCardInfo {
 	follower: number;
 	article_count: number;
 	vip_status: number;
+}
+
+type BiliModuleType =
+	"MODULE_TYPE_TITLE"
+	| "MODULE_TYPE_AUTHOR"
+	| "MODULE_TYPE_CONTENT"
+	| "MODULE_TYPE_BOTTOM"
+	| "MODULE_TYPE_STAT";
+
+/**
+ * opus 详细信息结构，目前一般用在专栏中
+ */
+export interface BiliOpusDetail {
+	basic: {
+		comment_id_str: string;
+		comment_type: number;
+		like_icon: {
+			action_url: string;
+			end_url: string;
+			id: number;
+			start_url: string;
+		};
+		rid_str: string; // 专栏类型动态时使用该ID访问
+		title: string;
+		uid: number;
+	};
+	id_str: string;
+	modules: {
+		module_type: BiliModuleType;
+		module_title: {
+			text: string;// 标题
+		};
+		module_author: BiliDynamicModuleAuthor;
+		module_content: {
+			paragraphs: {
+				align: number;
+				para_type: 1 | 2;// 1为text，2为pic
+				text: {
+					nodes: {
+						type: "TEXT_NODE_TYPE_WORD";
+						word: {
+							font_size: number; // 字体大小
+							style: {
+								bold: boolean;
+							};// 可能需要用的样式
+							words: string;// 专栏的文字
+						}
+					}[];
+				};
+				pic: {
+					pics: Opus_Pic[];
+					style: number;
+				};
+			}[];
+		};
+		module_bottom: {
+			share_info: {
+				pic: string;// app logo
+				summary: string;// 专栏的简介
+				title: string;// 标题
+			}
+		};
+		module_stat: {
+			comment: Stat;
+			forward: Stat;
+			like: Stat;
+			coin: Stat;
+			favorite: Stat;
+		};
+	}[];
+	type: 1;
 }

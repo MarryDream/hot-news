@@ -3,7 +3,11 @@
   "private" : true,
   "author" : "Bennett",
   "description" : "消息推送服务插件",
-  "version" : "2.0.0",
+  "version" : "2.0.1",
   "dependencies" : {
+    "user-agents" : "^1.1.42"
+  },
+  "devDependencies" : {
+    "@types/user-agents" : "^1.0.4"
   }
 }

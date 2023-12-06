@@ -78,12 +78,12 @@ const template = `<div class="dynamic-main">
 		
 		<div class="bili-dyn-content__orig__major suit-video-card" v-if="type === 'DYNAMIC_TYPE_ARTICLE'">
 			<div class="dyn-card-opus hide-border">
-				<div class="dyn-card-opus__title bili-ellipsis">{{dynamic.major.article.title}}</div>
+				<div class="dyn-card-opus__title bili-ellipsis">{{majorArticle.title}}</div>
 				<div class="dyn-card-opus__summary">
 					<div class="bili-rich-text" style="font-size: 15px;">
 						<div class="bili-rich-text__content folded line--4" style="line-height: 25px; max-height: 100px;">
 							<span class="virturl-start"></span>
-							<span>{{dynamic.major.article.desc}}</span>
+							<span>{{majorArticle.desc}}</span>
 						</div>
 						<div class="bili-rich-text__action">全文</div>
 					</div>
@@ -139,7 +139,9 @@ export default defineComponent( {
 				cover: ""
 			},
 			majorArticle: {
-				cover: ""
+				cover: "",
+				title: "",
+				desc: ""
 			},
 			live: {
 				title: "",
@@ -212,9 +214,20 @@ export default defineComponent( {
 				break;
 			
 			case 'DYNAMIC_TYPE_ARTICLE':
+				const major_ = props.dynamic.major;
+				if ( major_.type === 'MAJOR_TYPE_OPUS' ) {
+					const pics = major_.opus.pics;
+					const cover = pics && pics.length > 0 ? pics[0].url : "";
+					state.majorArticle.cover = cover ? `${ cover }@2072w.webp` : "";
+					state.majorArticle.title = major_.opus.title;
+					state.majorArticle.desc = major_.opus.summary.text;
+					break;
+				}
 				const covers = props.dynamic.major.article.covers;
 				const cover = covers && covers.length > 0 ? covers[0] : "";
-				state.majorArticle.cover = `${ cover }@2072w.webp`;
+				state.majorArticle.cover = cover ? `${ cover }@2072w.webp` : "";
+				state.majorArticle.title = props.dynamic.major.article.title;
+				state.majorArticle.desc = props.dynamic.major.article.desc;
 				break;
 			case 'DYNAMIC_TYPE_LIVE_RCMD':
 				const live = JSON.parse( props.dynamic.major.live_rcmd.content );

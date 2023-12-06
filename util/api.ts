@@ -2,10 +2,11 @@ import axios, { AxiosError } from "axios";
 import bot from 'ROOT';
 import { formatDate, get_uuid } from "#/hot-news/util/tools";
 import { DB_KEY } from "#/hot-news/util/constants";
-import { BiliDynamicCard, BiliLiveInfo, LiveUserInfo, News, UpCardInfo } from "#/hot-news/types/type";
+import { BiliDynamicCard, BiliLiveInfo, BiliOpusDetail, LiveUserInfo, News, UpCardInfo } from "#/hot-news/types/type";
 import moment from "moment";
 import { config } from "#/hot-news/init";
 import fetch, { Response } from "node-fetch";
+import UserAgent from 'user-agents';
 
 const API = {
 	sina: 'https://www.anyknew.com/api/v1/sites/sina',
@@ -22,6 +23,7 @@ const API = {
 	biliCard: "https://api.bilibili.com/x/web-interface/card",
 	biliStat: "https://api.bilibili.com/x/relation/stat",
 	biliLiveUserInfo: "https://api.live.bilibili.com/live_user/v1/Master/info",
+	biliOpusDetail: "https://api.bilibili.com/x/polymer/web-dynamic/v1/opus/detail",
 }
 
 const NEWS_HEADERS = {
@@ -46,7 +48,7 @@ export const getNews: ( channel?: string ) => Promise<string> = async ( channel:
 	if ( news ) {
 		return Promise.resolve( news );
 	}
-
+	
 	return new Promise( ( resolve, reject ) => {
 		axios.get( API[channel], { headers: NEWS_HEADERS, timeout: 5000 } ).then( res => {
 			if ( res.status !== 200 ) {
@@ -54,13 +56,13 @@ export const getNews: ( channel?: string ) => Promise<string> = async ( channel:
 				reject( '获取热点新闻失败' )
 				return;
 			}
-
+			
 			if ( res.data.status !== 0 ) {
 				bot.logger.error( `获取[${ channel }]热点新闻失败: ${ res.data.msg }` )
 				reject( '获取热点新闻失败' )
 				return;
 			}
-
+			
 			const {
 				site: {
 					attrs: { cn },
@@ -525,13 +527,35 @@ export async function getUpInfoFromArticle( uid: number, jump_url: string ): Pro
 	}
 }
 
+const userAgent = new UserAgent( [ { deviceCategory: 'desktop' }, /Safari|Chrome|FireFox|Edg/ ] );
+
 export async function getArticleHtml( jump_url: string ): Promise<string> {
+	const ua = userAgent.random().toString();
 	const response: Response = await fetch( `https:${ jump_url }`, {
 		headers: {
-			"user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36"
+			"user-agent": ua
 		}
 	} );
 	return await response.text();
+}
+
+/**
+ * 过渡版本接口(暂时先不用)
+ * @param opus_id 动态ID
+ */
+export async function getOpusDetail( opus_id: string ): Promise<BiliOpusDetail> {
+	const resp = await axios.get( API.biliOpusDetail, {
+		params: {
+			id: opus_id,
+			timezone_offset: new Date().getTimezoneOffset()
+		},
+		timeout: 10000
+	} );
+	if ( resp.data.code !== 0 ) {
+		return Promise.reject( resp.data.message );
+	}
+	
+	return resp.data.data.item;
 }
 
 export async function getUpStat( uid: number ): Promise<{ follower: number } | undefined> {
