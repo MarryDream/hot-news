@@ -4,8 +4,8 @@
 	<meta charset="UTF-8">
 	<meta content="never" name="referrer">
 	<title>Live</title>
-<!--	<script src="https://unpkg.com/vue@3.1.1/dist/vue.global.prod.js"></script>-->
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+	<script src="../../assets/js/vue@3.2.47.min.js"></script>
+	<script src="../../assets/js/qrcode.min.js"></script>
 	<link href="../../assets/styles/root.css" rel="stylesheet"/>
 	<link href="../../assets/styles/qrcode.css" rel="stylesheet"/>
 	<link href="../../assets/styles/avatar.css" rel="stylesheet"/>
@@ -15,13 +15,6 @@
 
 <div id="app"></div>
 
-<script type="importmap">
-	{
-	  "imports": {
-		"vue": "https://unpkg.com/vue@3.2.47/dist/vue.esm-browser.prod.js"
-	  }
-	}
-</script>
 <script type="module">
 	import App from "./components/index.js";
 	import { createApp } from "vue";
