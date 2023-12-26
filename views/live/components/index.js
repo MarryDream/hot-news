@@ -51,7 +51,8 @@ import getServer from "../../../assets/js/http.js";
 import { urlParamsGet } from "../../../assets/js/url.js";
 import { intToColor, toHumanize } from "../../../assets/js/utils.js";
 import VideoQRCode from "../../../components/video_qrcode.js"
-import { defineComponent, reactive, toRefs } from "vue";
+
+const { defineComponent, reactive, toRefs } = Vue;
 
 export default defineComponent( {
 	name: "App",
@@ -75,7 +76,7 @@ export default defineComponent( {
 			isSmallVip: false,
 			share_time
 		} );
-		const urlParams = urlParamsGet( location.search );
+		const urlParams = urlParamsGet( location.href );
 		const data = getServer( `/live?uid=${ urlParams.uid }` );
 		state.name = data.name;
 		state.liveRoom = data.liveRoom;
