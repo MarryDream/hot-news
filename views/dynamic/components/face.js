@@ -9,7 +9,7 @@ const template = `<div class="bili-dyn-content__orig__author">
 </div>
 </div>`;
 
-const { defineComponent } = Vue;
+const { defineComponent, ref } = Vue;
 
 export default defineComponent( {
 	name: "Face",
