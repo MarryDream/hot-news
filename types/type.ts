@@ -37,7 +37,7 @@ export interface Stat {
 interface BiliDynamicBasicInfo {
 	comment_id_str: string;
 	comment_type: number;
-	jump_url: string;// 不带协议头
+	jump_url?: string;// 不带协议头
 	like_icon: object;
 	rid_str: string; // 专栏类型动态时使用该ID访问
 }
@@ -649,6 +649,7 @@ export interface ChatInfo {
  * @id 动态ID
  * @name: UP的名称
  * @uid UP的UID
+ * @jump_url 跳转链接
  * @pub_time 发布时间(示例: 06-24、昨天)
  * @pub_tss 动态发布的具体时间
  * @comment_num 评论数量
@@ -664,6 +665,7 @@ export interface DynamicInfo {
 	comment_num: number;
 	forward_num: number;
 	like_num: number;
+	jump_url?: string;
 	archive?: BiliDynamicMajorArchiveInfo;
 }
 

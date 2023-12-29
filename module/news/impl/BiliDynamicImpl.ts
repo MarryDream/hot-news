@@ -24,8 +24,8 @@ export class BiliDynamicImpl implements NewsService {
 		height: 1000,
 		deviceScaleFactor: 2
 	}
-
-	async getInfo( channel?: string ): Promise<Sendable> {
+	
+	async getInfo( _channel?: string ): Promise<Sendable> {
 		return "";
 	}
 
@@ -113,7 +113,8 @@ export class BiliDynamicImpl implements NewsService {
 						pub_tss,
 						like_num,
 						comment_num,
-						forward_num
+						forward_num,
+						jump_url: card.basic.jump_url
 					};
 					this.normalDynamicHandle( dynamicInfo, chatInfo ).then();
 					i++;
@@ -209,13 +210,14 @@ export class BiliDynamicImpl implements NewsService {
 		                                   like_num,
 		                                   comment_num,
 		                                   forward_num,
-		                                   archive
+		                                   archive,
+		                                   jump_url
 	                                   }: DynamicInfo, {
 		                                   type,
 		                                   targetId
 	                                   }: ChatInfo ): Promise<void> {
 		let message: Sendable;
-		const url = `https://t.bilibili.com/${ id }`;
+		const url = jump_url ? `https:${ jump_url }` : `https://t.bilibili.com/${ id }`;
 		let img: Sendable = "";
 		let ok: boolean = false;
 		if ( config.screenshotType === 2 ) {
