@@ -5,6 +5,7 @@ import { exec } from "child_process";
 import FileManagement from "@/modules/file";
 import { BOT } from "@/modules/bot";
 import bot from "ROOT";
+import { randomBytes } from "crypto";
 
 export const formatDate: ( date: Date, format?: string ) => string = ( date, format = "-" ) => {
 	const dateArr: number[] = [ date.getFullYear(), date.getMonth() + 1, date.getDate() ];
@@ -46,13 +47,13 @@ export const getChannelKey: ( channel: string ) => ( string | number | null ) = 
 	if ( isNumber ) {
 		return parseInt( reg.exec( channel )![0] );
 	}
-
+	
 	for ( let k in CHANNEL_NAME ) {
 		if ( CHANNEL_NAME[k] === channel ) {
 			return k;
 		}
 	}
-
+	
 	return null;
 }
 
@@ -165,4 +166,14 @@ function add_zero_char( e: string, t: number ): string {
 
 function dec_to_hex( e ): string {
 	return Math.ceil( e ).toString( 16 ).toUpperCase()
+}
+
+export function random_png_end() {
+	const rand_png = Uint8Array.from( [
+		...randomBytes( 32 ),
+		0x00, 0x00, 0x00, 0x00,
+		73, 78, 68, 82,
+		...randomBytes( 4 )
+	] )
+	return Buffer.from( rand_png ).toString( 'base64' ).slice( -50 );
 }

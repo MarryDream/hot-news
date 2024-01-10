@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
 import bot from 'ROOT';
-import { formatDate, get_uuid } from "#/hot-news/util/tools";
+import { formatDate, get_uuid, random_png_end } from "#/hot-news/util/tools";
 import { DB_KEY } from "#/hot-news/util/constants";
 import { BiliDynamicCard, BiliLiveInfo, BiliOpusDetail, LiveUserInfo, News, UpCardInfo } from "#/hot-news/types/type";
 import moment from "moment";
@@ -40,6 +40,8 @@ const BILIBILI_DYNAMIC_HEADERS = {
 	"User-Agent": "Mozilla/5.0",
 	"Cookie": ""
 }
+
+const userAgent = new UserAgent( [ { deviceCategory: 'desktop' }, /Safari|Chrome|FireFox|Edg/ ] );
 
 export const getNews: ( channel?: string ) => Promise<string> = async ( channel: string = 'toutiao' ) => {
 	let date = formatDate( new Date() );
@@ -82,31 +84,36 @@ export const getNews: ( channel?: string ) => Promise<string> = async ( channel:
 	} );
 }
 
-async function getCookies( uid: number ): Promise<Record<string, string>> {
-	BILIBILI_DYNAMIC_HEADERS.Referer = BILIBILI_DYNAMIC_HEADERS.Referer.replace( /\$|\d+/, `${ uid }` )
+/**
+ * 获取B站指纹Cookie
+ */
+async function getCookies(): Promise<void> {
 	BILIBILI_DYNAMIC_HEADERS.Cookie = `_uuid=${ get_uuid() }`
-	return axios.get( `https://space.bilibili.com/${ uid }/dynamic`, {
+	const resp = await axios.get( `https://api.bilibili.com/x/frontend/finger/spi`, {
 		headers: BILIBILI_DYNAMIC_HEADERS
-	} ).then( resp => {
-		const exec = /<meta name="spm_prefix" content="([^"]+?)">/.exec( resp.data );
-		return {
-			spm_prefix: exec ? exec[1] : "",
-			cookies: resp.headers["set-cookie"]?.filter( value => !!value )
-				.map( value => value.trim().split( ";" )[0] ).join( ";" ) || ""
-		}
-	} )
+	} );
+	if ( resp.data.code !== 0 ) {
+		bot.logger.error( `[hot-news] 获取B站指纹出错:`, resp.data );
+		return;
+	}
+	BILIBILI_DYNAMIC_HEADERS.Cookie += `;buvid3=${ resp.data.data["b_3"] }`;
 }
 
-async function submitGateway( cookies: Record<string, string> ): Promise<void> {
+/**
+ * 上报并激活指纹Cookie
+ */
+async function submitGateway(): Promise<void> {
 	await axios.post( "https://api.bilibili.com/x/internal/gaia-gateway/ExClimbWuzhi", {
-		headers: BILIBILI_DYNAMIC_HEADERS,
-		data: {
+		payload: JSON.stringify( {
 			'3064': 1,
-			'39c8': `${ cookies.spm_prefix }.fp.risk`,
+			'39c8': `333.999.fp.risk`,
 			'3c43': {
-				'adca': BILIBILI_DYNAMIC_HEADERS["User-Agent"].includes( "Windows" ) ? "Win32" : "Linux"
+				'adca': BILIBILI_DYNAMIC_HEADERS["User-Agent"].includes( "Windows" ) ? "Win32" : "Linux",
+				'bfe9': random_png_end()
 			}
-		}
+		} )
+	}, {
+		headers: BILIBILI_DYNAMIC_HEADERS
 	} )
 }
 
@@ -119,14 +126,15 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 		return Promise.resolve( JSON.parse( dynamic ) );
 	}
 	
+	// 每次请求前随机生成个UA
+	BILIBILI_DYNAMIC_HEADERS["User-Agent"] = userAgent.random().toString();
+	BILIBILI_DYNAMIC_HEADERS.Referer = BILIBILI_DYNAMIC_HEADERS.Referer.replace( /\$|\d+/, `${ uid }` );
+	
 	// 获取Cookie
 	if ( !config.cookie ) {
-		const cookies = await getCookies( uid );
-		await submitGateway( cookies );
-		BILIBILI_DYNAMIC_HEADERS.Referer = BILIBILI_DYNAMIC_HEADERS.Referer.replace( /\$|\d+/, uid.toString( 10 ) );
-		BILIBILI_DYNAMIC_HEADERS.Cookie = cookies['cookies'];
+		await getCookies();
+		await submitGateway();
 	} else {
-		BILIBILI_DYNAMIC_HEADERS.Referer = BILIBILI_DYNAMIC_HEADERS.Referer.replace( /\$|\d+/, uid.toString( 10 ) );
 		BILIBILI_DYNAMIC_HEADERS.Cookie = config.cookie;
 	}
 	
@@ -138,7 +146,9 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 				offset: '',
 				host_mid: uid,
 				timezone_offset: -480,
-				features: "itemOpusStyle"
+				platform: 'web',
+				features: "itemOpusStyle,listOnlyfans,opusBigCover,onlyfansVote",
+				web_location: "333.999"
 			},
 			timeout: 5000,
 			headers: BILIBILI_DYNAMIC_HEADERS
@@ -226,6 +236,12 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 	} );
 }
 
+/**
+ * @deprecated
+ * @param uid 订阅的uid
+ * @param no_cache 是否用缓存
+ * @param cache_time 缓存时间
+ */
 export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number ) => Promise<BiliLiveInfo> = async ( uid, no_cache = false, cache_time = 60 ) => {
 	const live_info = await bot.redis.getString( `${ DB_KEY.bili_live_info_key }.${ uid }` );
 	if ( live_info ) {
@@ -526,8 +542,6 @@ export async function getUpInfoFromArticle( uid: number, jump_url: string ): Pro
 		bot.logger.error( `[hot-news] 获取UP:${ uid } 的数据失败`, e );
 	}
 }
-
-const userAgent = new UserAgent( [ { deviceCategory: 'desktop' }, /Safari|Chrome|FireFox|Edg/ ] );
 
 export async function getArticleHtml( jump_url: string ): Promise<string> {
 	const ua = userAgent.random().toString();
