@@ -103,12 +103,13 @@ async function getCookies(): Promise<void> {
  * 上报并激活指纹Cookie
  */
 async function submitGateway(): Promise<void> {
+	const ua = BILIBILI_DYNAMIC_HEADERS["User-Agent"];
 	await axios.post( "https://api.bilibili.com/x/internal/gaia-gateway/ExClimbWuzhi", {
 		payload: JSON.stringify( {
 			'3064': 1,
 			'39c8': `333.999.fp.risk`,
 			'3c43': {
-				'adca': BILIBILI_DYNAMIC_HEADERS["User-Agent"].includes( "Windows" ) ? "Win32" : "Linux",
+				'adca': ua.includes( "Windows" ) ? "Win32" : ua.includes( "Macintosh" ) ? "MacIntel" : "Linux",
 				'bfe9': random_png_end()
 			}
 		} )
