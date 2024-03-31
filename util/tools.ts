@@ -119,7 +119,7 @@ export function getVersion(): string {
  * @param v2
  * @return 0,1,-1
  */
-export function version_compare( v1, v2 ): number {
+export function version_compare( v1: string, v2: string ): number {
 	//将两个版本号拆成数组
 	const arr1 = v1.split( '.' ),
 		arr2 = v2.split( '.' );
@@ -164,16 +164,32 @@ function add_zero_char( e: string, t: number ): string {
 }
 
 
-function dec_to_hex( e ): string {
-	return Math.ceil( e ).toString( 16 ).toUpperCase()
+function dec_to_hex( e: number ): string {
+	return Math.ceil( e ).toString( 16 ).toUpperCase();
 }
 
 export function random_png_end() {
 	const rand_png = Uint8Array.from( [
 		...randomBytes( 32 ),
 		0x00, 0x00, 0x00, 0x00,
-		73, 78, 68, 82,
+		73, 69, 78, 68,
 		...randomBytes( 4 )
 	] )
 	return Buffer.from( rand_png ).toString( 'base64' ).slice( -50 );
+}
+
+export function random_canvas() {
+	const rand_png = Uint8Array.from( [
+		...randomBytes( 2 ),
+		0x00, 0x00, 0x00, 0x00,
+		73, 69, 78, 68,
+		0x00, 0xE0A0, 0x00, 0x2000
+	] )
+	return Buffer.from( rand_png ).toString( 'base64' );
+}
+
+export function random_audio() {
+	const min: number = 124.04347;
+	const max: number = 124.04348;
+	return Math.random() * ( max - min ) + min;
 }

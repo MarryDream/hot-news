@@ -1,12 +1,14 @@
 import axios, { AxiosError } from "axios";
 import bot from 'ROOT';
-import { formatDate, get_uuid, random_png_end } from "#/hot-news/util/tools";
+import { formatDate, get_uuid, random_audio, random_canvas, random_png_end } from "#/hot-news/util/tools";
 import { DB_KEY } from "#/hot-news/util/constants";
 import { BiliDynamicCard, BiliLiveInfo, BiliOpusDetail, LiveUserInfo, News, UpCardInfo } from "#/hot-news/types/type";
 import moment from "moment";
 import { config } from "#/hot-news/init";
 import fetch, { Response } from "node-fetch";
 import UserAgent from 'user-agents';
+import { gen_buvid_fp } from "#/hot-news/util/fp";
+import { getDmImg, getWbiSign } from "#/hot-news/util/wbi";
 
 const API = {
 	sina: 'https://www.anyknew.com/api/v1/sites/sina',
@@ -87,8 +89,8 @@ export const getNews: ( channel?: string ) => Promise<string> = async ( channel:
 /**
  * 获取B站指纹Cookie
  */
-async function getCookies(): Promise<void> {
-	BILIBILI_DYNAMIC_HEADERS.Cookie = `_uuid=${ get_uuid() }`
+async function getCookies( uuid: string ): Promise<void> {
+	BILIBILI_DYNAMIC_HEADERS.Cookie = `_uuid=${ uuid }`
 	const resp = await axios.get( `https://api.bilibili.com/x/frontend/finger/spi`, {
 		headers: BILIBILI_DYNAMIC_HEADERS
 	} );
@@ -96,23 +98,93 @@ async function getCookies(): Promise<void> {
 		bot.logger.error( `[hot-news] 获取B站指纹出错:`, resp.data );
 		return;
 	}
-	BILIBILI_DYNAMIC_HEADERS.Cookie += `;buvid3=${ resp.data.data["b_3"] }`;
+	BILIBILI_DYNAMIC_HEADERS.Cookie += `;buvid3=${ resp.data.data["b_3"] };buvid4=${ resp.data.data["b_4"] }`;
+}
+
+function boolToNum( bool: boolean ) {
+	return bool ? 1 : 0;
+}
+
+async function abtest_info( uid: number ): Promise<string> {
+	try {
+		const response = await axios.get( `https://space.bilibili.com/${ uid }/dynamic` );
+		const regex = /<script\s+id="abtest"\s*[^>]*>([\s\S]*?)<\/script>/i;
+		const matches = regex.exec( response.data );
+		if ( matches ) {
+			return matches[1].trim().replace( /^window\.abtest\s*=\s*/, '' );
+		} else {
+			bot.logger.warn( "[hot-news] 未获取到 abtest 信息。" );
+			return "";
+		}
+	} catch ( err ) {
+		if ( axios.isAxiosError( err ) ) {
+			bot.logger.error( `[hot-news] 获取 abtest 信息失败(AxiosError),`, err.message );
+		} else {
+			bot.logger.error( `[hot-news] 获取 abtest 信息失败,`, err );
+		}
+		return "";
+	}
 }
 
 /**
  * 上报并激活指纹Cookie
  */
-async function submitGateway(): Promise<void> {
+async function submitGateway( uid: number, randomUA: UserAgent, uuid: string ): Promise<void> {
 	const ua = BILIBILI_DYNAMIC_HEADERS["User-Agent"];
+	const { screenWidth, screenHeight, viewportHeight, viewportWidth } = randomUA.data;
+	const data = {
+		"3064": 1,
+		"5062": `${ Date.now() }`,
+		"03bf": `https%3A%2F%2Fspace.bilibili.com%2F${ uid }%2Fdynamic`,
+		"39c8": "333.999.fp.risk",
+		"34f1": "",
+		"d402": "",
+		"654a": "",
+		"6e7c": `${ screenWidth }x${ screenHeight }`,
+		"3c43": {
+			"2673": boolToNum( screenWidth < viewportWidth || screenHeight < viewportHeight ),
+			"5766": 24,
+			"6527": 0,
+			"7003": 1,
+			"807e": 1,
+			"b8ce": ua,
+			"641c": 0,
+			"07a4": "zh-CN",
+			"1c57": 8,
+			"0bd0": 8,
+			"748e": [ screenWidth, screenHeight ],
+			"d61f": [ viewportWidth, viewportHeight ],
+			"fc9d": -480,
+			"6aa9": "Asia/Shanghai",
+			"75b8": 1,
+			"3b21": 1,
+			"8a1c": 0,
+			"d52f": "not available",
+			"adca": ua.includes( "Windows" ) ? "Win32" : ua.includes( "Macintosh" ) ? "MacIntel" : "Linux",
+			"80c9": [ [ "PDF Viewer", "Portable Document Format", [ [ "application/pdf", "pdf" ], [ "text/pdf", "pdf" ] ] ], [ "Chrome PDF Viewer", "Portable Document Format", [ [ "application/pdf", "pdf" ], [ "text/pdf", "pdf" ] ] ], [ "Chromium PDF Viewer", "Portable Document Format", [ [ "application/pdf", "pdf" ], [ "text/pdf", "pdf" ] ] ], [ "Microsoft Edge PDF Viewer", "Portable Document Format", [ [ "application/pdf", "pdf" ], [ "text/pdf", "pdf" ] ] ], [ "WebKit built-in PDF", "Portable Document Format", [ [ "application/pdf", "pdf" ], [ "text/pdf", "pdf" ] ] ] ],
+			"13ab": random_canvas(),
+			"bfe9": random_png_end(),
+			"a3c1": [ "extensions:ANGLE_instanced_arrays;EXT_blend_minmax;EXT_color_buffer_half_float;EXT_depth_clamp;EXT_disjoint_timer_query;EXT_float_blend;EXT_frag_depth;EXT_shader_texture_lod;EXT_texture_compression_rgtc;EXT_texture_filter_anisotropic;EXT_sRGB;OES_element_index_uint;OES_fbo_render_mipmap;OES_standard_derivatives;OES_texture_float;OES_texture_float_linear;OES_texture_half_float;OES_texture_half_float_linear;OES_vertex_array_object;WEBGL_blend_func_extended;WEBGL_color_buffer_float;WEBGL_compressed_texture_s3tc;WEBGL_compressed_texture_s3tc_srgb;WEBGL_debug_renderer_info;WEBGL_debug_shaders;WEBGL_depth_texture;WEBGL_draw_buffers;WEBGL_lose_context;WEBGL_multi_draw;WEBGL_polygon_mode", "webgl aliased line width range:[1, 1]", "webgl aliased point size range:[1, 255.875]", "webgl alpha bits:8", "webgl antialiasing:yes", "webgl blue bits:8", "webgl depth bits:24", "webgl green bits:8", "webgl max anisotropy:16", "webgl max combined texture image units:32", "webgl max cube map texture size:16384", "webgl max fragment uniform vectors:1024", "webgl max render buffer size:16384", "webgl max texture image units:16", "webgl max texture size:16384", "webgl max varying vectors:15", "webgl max vertex attribs:16", "webgl max vertex texture image units:16", "webgl max vertex uniform vectors:1024", "webgl max viewport dims:[16384, 16384]", "webgl red bits:8", "webgl renderer:WebKit WebGL", "webgl shading language version:WebGL GLSL ES 1.0 (OpenGL ES GLSL ES 1.0 Chromium)", "webgl stencil bits:0", "webgl vendor:WebKit", "webgl version:WebGL 1.0 (OpenGL ES 2.0 Chromium)", "webgl unmasked vendor:Google Inc. (Intel Inc.)", "webgl unmasked renderer:ANGLE (Intel Inc., Intel(R) UHD Graphics 630, OpenGL 4.1)", "webgl vertex shader high float precision:23", "webgl vertex shader high float precision rangeMin:127", "webgl vertex shader high float precision rangeMax:127", "webgl vertex shader medium float precision:23", "webgl vertex shader medium float precision rangeMin:127", "webgl vertex shader medium float precision rangeMax:127", "webgl vertex shader low float precision:23", "webgl vertex shader low float precision rangeMin:127", "webgl vertex shader low float precision rangeMax:127", "webgl fragment shader high float precision:23", "webgl fragment shader high float precision rangeMin:127", "webgl fragment shader high float precision rangeMax:127", "webgl fragment shader medium float precision:23", "webgl fragment shader medium float precision rangeMin:127", "webgl fragment shader medium float precision rangeMax:127", "webgl fragment shader low float precision:23", "webgl fragment shader low float precision rangeMin:127", "webgl fragment shader low float precision rangeMax:127", "webgl vertex shader high int precision:0", "webgl vertex shader high int precision rangeMin:31", "webgl vertex shader high int precision rangeMax:30", "webgl vertex shader medium int precision:0", "webgl vertex shader medium int precision rangeMin:31", "webgl vertex shader medium int precision rangeMax:30", "webgl vertex shader low int precision:0", "webgl vertex shader low int precision rangeMin:31", "webgl vertex shader low int precision rangeMax:30", "webgl fragment shader high int precision:0", "webgl fragment shader high int precision rangeMin:31", "webgl fragment shader high int precision rangeMax:30", "webgl fragment shader medium int precision:0", "webgl fragment shader medium int precision rangeMin:31", "webgl fragment shader medium int precision rangeMax:30", "webgl fragment shader low int precision:0", "webgl fragment shader low int precision rangeMin:31", "webgl fragment shader low int precision rangeMax:30" ],
+			"6bc5": "Google Inc. (Intel Inc.)~ANGLE (Intel Inc., Intel(R) UHD Graphics 630, OpenGL 4.1)",
+			"ed31": 0,
+			"72bd": 0,
+			"097b": 0,
+			"52cd": [ 0, 0, 0 ],
+			"a658": [ "Andale Mono", "Arial", "Arial Black", "Arial Hebrew", "Arial Narrow", "Arial Rounded MT Bold", "Arial Unicode MS", "Comic Sans MS", "Courier", "Courier New", "Geneva", "Georgia", "Helvetica", "Helvetica Neue", "Impact", "LUCIDA GRANDE", "Microsoft Sans Serif", "Monaco", "Palatino", "Tahoma", "Times", "Times New Roman", "Trebuchet MS", "Verdana", "Wingdings", "Wingdings 2", "Wingdings 3" ],
+			"d02f": random_audio()
+		},
+		"54ef": await abtest_info( uid ),
+		"8b94": "",
+		"df35": uuid,
+		"07a4": "zh-CN",
+		"5f45": null,
+		"db46": 0
+	}
+	const payload = JSON.stringify( data );
+	const buvid_fp = gen_buvid_fp( payload, 31 );
+	BILIBILI_DYNAMIC_HEADERS.Cookie += `;buvid_fp=${ buvid_fp }`
 	await axios.post( "https://api.bilibili.com/x/internal/gaia-gateway/ExClimbWuzhi", {
-		payload: JSON.stringify( {
-			'3064': 1,
-			'39c8': `333.999.fp.risk`,
-			'3c43': {
-				'adca': ua.includes( "Windows" ) ? "Win32" : ua.includes( "Macintosh" ) ? "MacIntel" : "Linux",
-				'bfe9': random_png_end()
-			}
-		} )
+		payload
 	}, {
 		headers: BILIBILI_DYNAMIC_HEADERS
 	} )
@@ -128,29 +200,41 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 	}
 	
 	// 每次请求前随机生成个UA
-	BILIBILI_DYNAMIC_HEADERS["User-Agent"] = userAgent.random().toString();
+	const random = userAgent.random();
+	BILIBILI_DYNAMIC_HEADERS["User-Agent"] = random.toString();
 	BILIBILI_DYNAMIC_HEADERS.Referer = BILIBILI_DYNAMIC_HEADERS.Referer.replace( /\$|\d+/, `${ uid }` );
 	
 	// 获取Cookie
 	if ( !config.cookie ) {
-		await getCookies();
-		await submitGateway();
+		const uuid = get_uuid();
+		await getCookies( uuid );
+		await submitGateway( uid, random, uuid );
 	} else {
 		BILIBILI_DYNAMIC_HEADERS.Cookie = config.cookie;
 	}
 	
 	// 已经发布的动态ID
 	const dynamicIdList: string[] = await bot.redis.getSet( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }` );
+	const data = {
+		offset: '',
+		host_mid: uid,
+		timezone_offset: -480,
+		platform: 'web',
+		features: "itemOpusStyle,listOnlyfans,opusBigCover,onlyfansVote",
+		web_location: "333.999",
+		...getDmImg(),
+		"x-bili-device-req-json": { "platform": "web", "device": "pc" },
+		"x-bili-web-req-json": { "spm_id": "333.999" }
+	}
+	const { wts, w_rid } = await getWbiSign( data, BILIBILI_DYNAMIC_HEADERS );
+	const params = {
+		...data,
+		wts,
+		w_rid
+	};
 	return new Promise( ( resolve ) => {
 		axios.get( API.biliDynamic, {
-			params: {
-				offset: '',
-				host_mid: uid,
-				timezone_offset: -480,
-				platform: 'web',
-				features: "itemOpusStyle,listOnlyfans,opusBigCover,onlyfansVote",
-				web_location: "333.999"
-			},
+			params,
 			timeout: 5000,
 			headers: BILIBILI_DYNAMIC_HEADERS
 		} ).then( r => {
@@ -504,7 +588,7 @@ export async function get60s(): Promise<string> {
 		axios.get( api, { params: { type: 'json' }, timeout: 10000, headers } )
 			.then( response => {
 				if ( response.data.success ) {
-					const imgUrl = response.data.imgUrl;
+					const imgUrl = response.data["imgUrl"];
 					resolve( imgUrl );
 					bot.redis.setString( key, imgUrl, 3600 );
 				}
