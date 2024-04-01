@@ -44,6 +44,10 @@ const BILIBILI_DYNAMIC_HEADERS = {
 }
 
 const userAgent = new UserAgent( [ { deviceCategory: 'desktop' }, /Safari|Chrome|FireFox|Edg/ ] );
+/**
+ * bili fp
+ */
+let buvid_fp: string | undefined;
 
 export const getNews: ( channel?: string ) => Promise<string> = async ( channel: string = 'toutiao' ) => {
 	let date = formatDate( new Date() );
@@ -181,7 +185,8 @@ async function submitGateway( uid: number, randomUA: UserAgent, uuid: string ): 
 		"db46": 0
 	}
 	const payload = JSON.stringify( data );
-	const buvid_fp = gen_buvid_fp( payload, 31 );
+	// 如果已经生成的有就一直用，初次会 -352 ，后续就可正常使用，且该 cookie 值服务端会自动续期
+	buvid_fp = buvid_fp || gen_buvid_fp( payload, 31 );
 	BILIBILI_DYNAMIC_HEADERS.Cookie += `;buvid_fp=${ buvid_fp }`
 	await axios.post( "https://api.bilibili.com/x/internal/gaia-gateway/ExClimbWuzhi", {
 		payload
@@ -199,16 +204,14 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 		return Promise.resolve( JSON.parse( dynamic ) );
 	}
 	
-	// 每次请求前随机生成个UA
-	const random = userAgent.random();
-	BILIBILI_DYNAMIC_HEADERS["User-Agent"] = random.toString();
+	BILIBILI_DYNAMIC_HEADERS["User-Agent"] = userAgent.toString();
 	BILIBILI_DYNAMIC_HEADERS.Referer = BILIBILI_DYNAMIC_HEADERS.Referer.replace( /\$|\d+/, `${ uid }` );
 	
 	// 获取Cookie
 	if ( !config.cookie ) {
 		const uuid = get_uuid();
 		await getCookies( uuid );
-		await submitGateway( uid, random, uuid );
+		await submitGateway( uid, userAgent, uuid );
 	} else {
 		BILIBILI_DYNAMIC_HEADERS.Cookie = config.cookie;
 	}
@@ -240,7 +243,7 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 		} ).then( r => {
 			const data = r.data;
 			if ( data.code !== 0 ) {
-				bot.logger.error( `获取B站[${ uid }]动态失败,code is [${ data.code }], reason: ${ data.message || data.msg }` );
+				bot.logger.error( `获取B站[${ uid }]动态失败,`, data );
 				resolve( [] );
 				return;
 			}

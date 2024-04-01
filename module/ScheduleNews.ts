@@ -6,6 +6,7 @@ import { NewsServiceFactory } from "#/hot-news/module/NewsServiceFactory";
 import { RefreshCatch } from "@/modules/management/refresh";
 import { INewsConfig } from "#/hot-news/module/NewsConfig";
 import { getRandomNumber } from "@/utils/random";
+import { sleep } from "@/utils/async";
 
 export class ScheduleNews {
 	private readonly bot: BOT;
@@ -70,6 +71,9 @@ export class ScheduleNews {
 	public createBiliSchedule(): void {
 		// B站动态定时轮询任务
 		scheduleJob( "hot-news-bilibili-dynamic-job", this.config.biliDynamicScheduleRule, async () => {
+			// 加点随机延时，看不规律的请求能否避开风控
+			const time: number = getRandomNumber( 1000, 15000 );
+			await sleep( time );
 			await this.notifyBiliDynamic();
 		} );
 		this.bot.logger.info( "[hot-news] [bilibili-dynamic-job] B站动态定时任务已创建完成..." );
