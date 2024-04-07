@@ -195,15 +195,7 @@ async function submitGateway( uid: number, randomUA: UserAgent, uuid: string ): 
 	} )
 }
 
-/**
- * 获取B站空间动态列表
- */
-export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: number ) => Promise<BiliDynamicCard[]> = async ( uid, no_cache = false, cache_time = 60 ) => {
-	const dynamic = await bot.redis.getString( `${ DB_KEY.bili_dynamic_key }.${ uid }` );
-	if ( dynamic ) {
-		return Promise.resolve( JSON.parse( dynamic ) );
-	}
-	
+async function getBiliDynamicList( uid: number ): Promise<BiliDynamicCard[]> {
 	BILIBILI_DYNAMIC_HEADERS["User-Agent"] = userAgent.toString();
 	BILIBILI_DYNAMIC_HEADERS.Referer = BILIBILI_DYNAMIC_HEADERS.Referer.replace( /\$|\d+/, `${ uid }` );
 	
@@ -216,8 +208,6 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 		BILIBILI_DYNAMIC_HEADERS.Cookie = config.cookie;
 	}
 	
-	// 已经发布的动态ID
-	const dynamicIdList: string[] = await bot.redis.getSet( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }` );
 	const data = {
 		offset: '',
 		host_mid: uid,
@@ -235,93 +225,97 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
 		wts,
 		w_rid
 	};
-	return new Promise( ( resolve ) => {
-		axios.get( API.biliDynamic, {
-			params,
-			timeout: 5000,
-			headers: BILIBILI_DYNAMIC_HEADERS
-		} ).then( r => {
-			const data = r.data;
-			if ( data.code !== 0 ) {
-				bot.logger.error( `获取B站[${ uid }]动态失败,`, data );
-				resolve( [] );
-				return;
-			}
-			
-			const { items }: { items: BiliDynamicCard[] } = data.data;
-			let filter_items: BiliDynamicCard[];
-			// 无法显示消息、历史消息、以及自定义过滤内容过滤掉
-			const filterDynamicType = config.filterDynamicType;
-			const reg = new RegExp( config.filterContent );
-			filter_items = items
-				// 过滤已缓存的ID
-				.filter( c => !dynamicIdList.includes( c.id_str ) && c.visible )
-				// 过滤全部类型动态的文字内容
-				.filter( c => {
-					return config.filterContent ? !new RegExp( config.filterContent ).test( c.modules.module_dynamic.desc?.text || "" ) : true;
-				} )
-				// 按动态类型进行不同的匹配方式(主要处理转发类型)
-				.filter( card => {
-					if ( filterDynamicType.length === 0 ) {
-						return true;
-					}
-					for ( let value of filterDynamicType ) {
-						let result: boolean = true;
-						// 转发动态去匹配原动态内容及tag
-						if ( card.type === value.type && value.type === 'DYNAMIC_TYPE_FORWARD' ) {
-							const richTextNodes = card.orig!.modules.module_dynamic.desc?.rich_text_nodes || [];
-							const text = card.orig!.modules.module_dynamic.desc?.text || "";
-							const content: string = richTextNodes?.map( node => node.text ).join() + text;
-							result = value.reg ?
-								!new RegExp( value.reg ).test( content )
-								: false;
-						} else if ( card.type === value.type ) {
-							// 其他类型动态暂且只匹配动态的文字内容及tag
-							result = value.reg ? !new RegExp( value.reg ).test( card.modules.module_dynamic.desc?.text || "" ) : false;
-						} else {
-							result = true;
-						}
-						if ( !result ) {
-							bot.logger.info( "保存已过滤的消息: ", card.id_str, "触发的规则是：", filterDynamicType );
-							if ( !dynamicIdList.includes( card.id_str ) ) {
-								bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, card.id_str );
-								dynamicIdList.push( card.id_str );
-							}
-							return false;
-						}
-					}
-					return true;
-				} );
-			
-			// 把过滤掉的消息ID保存，避免后续查询因为触发反爬虫导致又被推送
-			items.filter( c => !dynamicIdList.includes( c.id_str )
-				&& c.visible
-				&& reg.test( c.modules.module_dynamic.desc?.text || "" ) ).forEach( value => {
-				bot.logger.info( "保存已过滤的消息: ", value.id_str, "触发的规则是：", `${ config.filterContent }` );
-				bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, value.id_str );
-			} );
-			
-			if ( filter_items.length > 0 ) {
-				resolve( filter_items );
-				if ( !no_cache ) {
-					bot.redis.setString( `${ DB_KEY.bili_dynamic_key }.${ uid }`, JSON.stringify( filter_items ), cache_time );
-				}
-			} else {
-				resolve( [] );
-				if ( !no_cache ) {
-					bot.redis.setString( `${ DB_KEY.bili_dynamic_key }.${ uid }`, "[]", cache_time );
-				}
-			}
-		} ).catch( ( reason ): any => {
-			if ( axios.isAxiosError( reason ) ) {
-				let err = <AxiosError>reason;
-				bot.logger.error( `获取B站[${ uid }]动态失败(axiosError), reason: ${ err.message }` );
-			} else {
-				bot.logger.error( `获取B站[${ uid }]动态失败, reason:`, reason );
-			}
-			resolve( [] )
-		} )
+	
+	const resp = await axios.get( API.biliDynamic, {
+		params,
+		timeout: 5000,
+		headers: BILIBILI_DYNAMIC_HEADERS
 	} );
+	
+	if ( resp.data.code !== 0 ) {
+		bot.logger.error( `获取B站[${ uid }]动态失败,`, resp.data );
+		return [];
+	}
+	
+	const { items }: { items: BiliDynamicCard[] } = resp.data.data;
+	let filter_items: BiliDynamicCard[];
+	// 无法显示消息、历史消息、以及自定义过滤内容过滤掉
+	const filterDynamicType = config.filterDynamicType;
+	const reg = new RegExp( config.filterContent );
+	// 已经发布的动态ID
+	const dynamicIdList: string[] = await bot.redis.getSet( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }` );
+	filter_items = items
+		// 过滤已缓存的ID
+		.filter( c => !dynamicIdList.includes( c.id_str ) && c.visible )
+		// 过滤全部类型动态的文字内容
+		.filter( c => {
+			return config.filterContent ? !new RegExp( config.filterContent ).test( c.modules.module_dynamic.desc?.text || "" ) : true;
+		} )
+		// 按动态类型进行不同的匹配方式(主要处理转发类型)
+		.filter( card => {
+			if ( filterDynamicType.length === 0 ) {
+				return true;
+			}
+			for ( let value of filterDynamicType ) {
+				let result: boolean = true;
+				// 转发动态去匹配原动态内容及tag
+				if ( card.type === value.type && value.type === 'DYNAMIC_TYPE_FORWARD' ) {
+					const richTextNodes = card.orig!.modules.module_dynamic.desc?.rich_text_nodes || [];
+					const text = card.orig!.modules.module_dynamic.desc?.text || "";
+					const content: string = richTextNodes?.map( node => node.text ).join() + text;
+					result = value.reg ?
+						!new RegExp( value.reg ).test( content )
+						: false;
+				} else if ( card.type === value.type ) {
+					// 其他类型动态暂且只匹配动态的文字内容及tag
+					result = value.reg ? !new RegExp( value.reg ).test( card.modules.module_dynamic.desc?.text || "" ) : false;
+				} else {
+					result = true;
+				}
+				if ( !result ) {
+					bot.logger.info( "保存已过滤的消息: ", card.id_str, "触发的规则是：", filterDynamicType );
+					if ( !dynamicIdList.includes( card.id_str ) ) {
+						bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, card.id_str );
+						dynamicIdList.push( card.id_str );
+					}
+					return false;
+				}
+			}
+			return true;
+		} );
+	
+	// 把过滤掉的消息ID保存，避免后续查询因为触发反爬虫导致又被推送
+	items.filter( c => !dynamicIdList.includes( c.id_str )
+		&& c.visible
+		&& reg.test( c.modules.module_dynamic.desc?.text || "" ) ).forEach( value => {
+		bot.logger.info( "保存已过滤的消息: ", value.id_str, "触发的规则是：", `${ config.filterContent }` );
+		bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, value.id_str );
+	} );
+	
+	if ( filter_items.length > 0 ) {
+		return filter_items;
+	}
+	
+	return [];
+}
+
+/**
+ * @description 获取B站空间动态列表
+ * @param {number} uid 用户UID
+ * @returns {Promise<BiliDynamicCard[]>}
+ */
+export async function getBiliDynamicNew( uid: number ): Promise<BiliDynamicCard[]> {
+	try {
+		return await getBiliDynamicList( uid );
+	} catch ( reason ) {
+		if ( axios.isAxiosError( reason ) ) {
+			let err = <AxiosError>reason;
+			bot.logger.error( `获取B站[${ uid }]动态失败(axiosError), reason: ${ err.message }` );
+		} else {
+			bot.logger.error( `获取B站[${ uid }]动态失败, reason:`, reason );
+		}
+		return [];
+	}
 }
 
 /**
@@ -331,6 +325,7 @@ export const getBiliDynamicNew: ( uid: number, no_cache?: boolean, cache_time?: 
  * @param cache_time 缓存时间
  */
 export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number ) => Promise<BiliLiveInfo> = async ( uid, no_cache = false, cache_time = 60 ) => {
+	//region 折叠这部分代码，该接口需要经常调整，暂时不维护，目前有其他接口可以获取直播间信息
 	const live_info = await bot.redis.getString( `${ DB_KEY.bili_live_info_key }.${ uid }` );
 	if ( live_info ) {
 		return Promise.resolve( JSON.parse( live_info ) );
@@ -394,139 +389,73 @@ export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number
 			resolve( info );
 		} )
 	} );
+	//endregion
+}
+
+async function getBiliLiveInfo( uid: number ): Promise<BiliLiveInfo | undefined> {
+	const response = await axios.get( API.bili_live_status, {
+		params: {
+			"uids[]": uid
+		},
+		headers: BILIBILI_DYNAMIC_HEADERS,
+		timeout: 5000
+	} );
+	
+	if ( response.data.code !== 0 ) {
+		bot.logger.error( `获取B站[${ uid }]直播间状态失败,code is [${ response.data.code }], reason: ${ response.data.message || response.data.msg }` );
+		return;
+	}
+	
+	if ( Array.isArray( response.data.data ) ) {
+		return;
+	}
+	
+	const {
+		title, uname, online, live_status, live_time, cover_from_user, room_id, short_id,
+		area_name, area_v2_name, area_v2_parent_name, face, tag_name
+	} = response.data.data[uid];
+	return {
+		liveRoom: {
+			liveStatus: live_status,
+			roomStatus: 1,
+			title,
+			url: `https://live.bilibili.com/${ short_id === 0 ? room_id : short_id }`,
+			cover: cover_from_user,
+			live_time,
+			watched_show: {
+				switch: true,
+				num: online,
+				text_small: "",
+				text_large: ""
+			},
+			room_id,
+			short_id,
+			area_name,
+			area_v2_name,
+			area_v2_parent_name,
+			face,
+			tag_name
+		},
+		name: uname
+	};
 }
 
 /**
- * 获取直播间状态的 API
- * @param uid
- * @param no_cache
- * @param cache_time
+ * @description 获取直播间状态的 API
+ * @param {number} uid 订阅的uid
+ * @returns {Promise<BiliLiveInfo>}
  */
-export const getBiliLiveStatus: ( uid: number, no_cache?: boolean, cache_time?: number ) => Promise<BiliLiveInfo> = async ( uid, no_cache = false, cache_time = 60 ) => {
-	const live_info = await bot.redis.getString( `${ DB_KEY.bili_live_status_key }.${ uid }` );
-	if ( live_info ) {
-		return Promise.resolve( JSON.parse( live_info ) );
+export async function getBiliLiveStatus( uid: number ): Promise<BiliLiveInfo | undefined> {
+	try {
+		return await getBiliLiveInfo( uid );
+	} catch ( reason ) {
+		if ( axios.isAxiosError( reason ) ) {
+			let err = <AxiosError>reason;
+			bot.logger.error( `获取B站[${ uid }]直播间状态失败(axiosError), reason: ${ err.message }` );
+		} else {
+			bot.logger.error( `获取B站[${ uid }]直播间状态失败, reason:`, reason );
+		}
 	}
-	
-	return new Promise( ( resolve ) => {
-		axios.get( API.bili_live_status, {
-			params: {
-				"uids[]": uid
-			},
-			headers: BILIBILI_DYNAMIC_HEADERS,
-			timeout: 5000
-		} ).then( r => {
-			if ( r.data.code !== 0 ) {
-				bot.logger.error( `获取B站[${ uid }]直播间状态失败,code is [${ r.data.code }], reason: ${ r.data.message || r.data.msg }` );
-				return;
-			}
-			
-			if ( Array.isArray( r.data.data ) ) {
-				const info = {
-					liveRoom: {
-						liveStatus: -1,
-						roomStatus: 1,
-						title: "",
-						url: `https://live.bilibili.com/`,
-						cover: "",
-						live_time: 0,
-						watched_show: {
-							switch: true,
-							num: 0,
-							text_small: "",
-							text_large: ""
-						},
-						room_id: 0,
-						short_id: 0,
-						area_name: '',
-						area_v2_name: '',
-						area_v2_parent_name: '',
-						face: '',
-						tag_name: ''
-					},
-					name: uid.toString( 10 )
-				}
-				resolve( info );
-				return;
-			}
-			
-			const {
-				title,
-				uname,
-				online,
-				live_status,
-				live_time,
-				cover_from_user,
-				room_id,
-				short_id,
-				area_name,
-				area_v2_name,
-				area_v2_parent_name,
-				face,
-				tag_name
-			} = r.data.data[uid];
-			const info = {
-				liveRoom: {
-					liveStatus: live_status,
-					roomStatus: 1,
-					title,
-					url: `https://live.bilibili.com/${ short_id === 0 ? room_id : short_id }`,
-					cover: cover_from_user,
-					live_time,
-					watched_show: {
-						switch: true,
-						num: online,
-						text_small: "",
-						text_large: ""
-					},
-					room_id,
-					short_id,
-					area_name,
-					area_v2_name,
-					area_v2_parent_name,
-					face,
-					tag_name
-				},
-				name: uname
-			}
-			resolve( info );
-			if ( !no_cache ) {
-				bot.redis.setString( `${ DB_KEY.bili_live_status_key }.${ uid }`, JSON.stringify( info ), cache_time );
-			}
-		} ).catch( ( reason ): any => {
-			if ( axios.isAxiosError( reason ) ) {
-				let err = <AxiosError>reason;
-				bot.logger.error( `获取B站[${ uid }]直播间状态失败(axiosError), reason: ${ err.message }` );
-			} else {
-				bot.logger.error( `获取B站[${ uid }]直播间状态失败, reason:`, reason );
-			}
-			const info = {
-				liveRoom: {
-					liveStatus: -1,
-					roomStatus: 1,
-					title: "",
-					url: `https://live.bilibili.com/`,
-					cover: "",
-					live_time: 0,
-					watched_show: {
-						switch: true,
-						num: 0,
-						text_small: "",
-						text_large: ""
-					},
-					room_id: 0,
-					short_id: 0,
-					area_name: '',
-					area_v2_name: '',
-					area_v2_parent_name: '',
-					face: '',
-					tag_name: ''
-				},
-				name: uid.toString( 10 )
-			}
-			resolve( info );
-		} )
-	} );
 }
 
 export async function getMoyuImg(): Promise<string> {

@@ -1,10 +1,7 @@
 import { NewsService } from "#/hot-news/module/news/NewsService";
 import { segment, Sendable } from "@/modules/lib";
-import { wait } from "#/hot-news/util/tools";
-import { config } from "#/hot-news/init";
 import bot from "ROOT";
 import { DB_KEY } from "#/hot-news/util/constants";
-import { ChatInfo } from "#/hot-news/types/type";
 import { MessageMethod } from "#/hot-news/module/message/MessageMethod";
 import { get60s } from "#/hot-news/util/api";
 
@@ -18,10 +15,19 @@ export class SixtySecondsWatchNews implements NewsService {
 	}
 	
 	async handler(): Promise<void> {
-		const set: string[] = await bot.redis.getSet( DB_KEY.ids );
-		if ( set.length === 0 ) {
-			return;
-		}
+		const subs = await bot.redis.getHash( DB_KEY.channel );
+		const all_subs: string[] = Object.values( subs );
+		const qq_list: string[] = Object.keys( subs );
+		if ( all_subs.length === 0 ) return;
+		
+		const all_sub: Set<string> = new Set<string>(
+			all_subs.flatMap( value => {
+				value = value.startsWith( "[" ) ? value : `["${ value }"]`;
+				return JSON.parse( value ) || [];
+			} )
+		);
+		
+		if ( !all_sub.has( "60sNews" ) ) return;
 		
 		let msg: Sendable = "";
 		try {
@@ -31,25 +37,10 @@ export class SixtySecondsWatchNews implements NewsService {
 			return;
 		}
 		
-		let i = 0;
-		for ( let id of set ) {
-			const { type, targetId }: ChatInfo = JSON.parse( id );
-			
-			let channel = await bot.redis.getHashField( DB_KEY.channel, `${ targetId }` );
-			if ( !channel ) {
-				continue;
-			}
-			channel = channel.startsWith( "[" ) ? channel : `["${ channel }"]`;
-			const channels: string[] = JSON.parse( channel ) || "[]";
-			if ( channels.includes( "60sNews" ) ) {
-				bot.logger.info( `[hot-news] - [${ targetId }] - 获取到60s新闻图: `, msg );
-				await MessageMethod.sendMsg( type, targetId, msg );
-				i++;
-				if ( config.pushLimit.enable && i > config.pushLimit.limitTimes ) {
-					await wait( config.pushLimit.limitTime * 1000 );
-					i = 0;
-				}
-			}
+		bot.logger.info( `[hot-news] - 获取到60s新闻图: `, msg );
+		for ( const qq of qq_list ) {
+			const type = await bot.redis.getHashField( DB_KEY.subscribe_chat_info_key, qq );
+			await MessageMethod.sendMsg( parseInt( type ), parseInt( qq ), msg );
 		}
 	}
 	

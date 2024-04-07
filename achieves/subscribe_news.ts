@@ -8,7 +8,7 @@ import { GroupMessageEvent } from "@/modules/lib";
 import { NewsServiceFactory } from "#/hot-news/module/NewsServiceFactory";
 
 
-async function biliHandler( targetId: number, db_data: string, uid: number, upName: string, {
+async function biliHandler( targetId: number, type: number, uid: number, upName: string, {
 	redis,
 	sendMessage
 }: InputParameter ): Promise<void> {
@@ -27,7 +27,7 @@ async function biliHandler( targetId: number, db_data: string, uid: number, upNa
 	
 	uidList.push( uid );
 	await redis.setHash( DB_KEY.notify_bili_ids_key, { [`${ targetId }`]: JSON.stringify( uidList ) } );
-	await redis.addSetMember( DB_KEY.sub_bili_ids_key, db_data );
+	await redis.setHashField( DB_KEY.subscribe_chat_info_key, `${ targetId }`, `${ type }` );
 	await scheduleNews.initBiliDynamic( uid );
 	await sendMessage( `[${ targetId }]已成功订阅B站[${ upName }]的动态和直播。` );
 	return;
@@ -60,8 +60,6 @@ export default defineDirective( "order", async ( i: InputParameter ) => {
 		return;
 	}
 	
-	const db_data = JSON.stringify( { targetId, type } );
-	
 	if ( type === MessageType.Group ) {
 		const groupMsg = <GroupMessageEvent>messageData;
 		if ( groupMsg.sender.role === 'member' ) {
@@ -72,7 +70,7 @@ export default defineDirective( "order", async ( i: InputParameter ) => {
 	
 	// 处理原神B站动态订阅
 	if ( channel === CHANNEL_NAME.genshin || ( channelKey === 401742377 ) ) {
-		await biliHandler( targetId, db_data, 401742377, '原神', i );
+		await biliHandler( targetId, type, 401742377, '原神', i );
 		return;
 	}
 	
@@ -80,17 +78,17 @@ export default defineDirective( "order", async ( i: InputParameter ) => {
 		// 处理B站UP主订阅
 		let upName = "";
 		try {
-			const info = await getBiliLiveStatus( channelKey, true );
+			const info = await getBiliLiveStatus( channelKey );
 			if ( !info ) {
 				await sendMessage( `[${ channel }]不是一个可用的 uid`, true );
 			}
-			upName = info.name;
+			upName = info?.name || `${ channelKey }`;
 		} catch ( e ) {
 			logger.warn( `获取B站[${ channelKey }]个人信息失败!`, e );
 			await sendMessage( `查询B站[${ channel }]时网络请求错误, 请联系 BOT 持有者反馈该问题!`, true );
 		}
 		// 初始化该UP的动态数据
-		await biliHandler( targetId, db_data, channelKey, upName, i );
+		await biliHandler( targetId, type, channelKey, upName, i );
 		return;
 	} else {
 		// 处理新闻、摸鱼等订阅
@@ -100,8 +98,9 @@ export default defineDirective( "order", async ( i: InputParameter ) => {
 		if ( !parse.includes( channelKey ) ) {
 			parse.push( channelKey );
 			await redis.setHash( DB_KEY.channel, { [`${ targetId }`]: JSON.stringify( parse ) } );
+			await redis.setHashField( DB_KEY.subscribe_chat_info_key, `${ targetId }`, `${ type }` );
 		}
-		await redis.addSetMember( DB_KEY.ids, db_data );
+		
 		await sendMessage( `[${ targetId }]已成功订阅[${ channel }]消息。` );
 		
 		const news = await NewsServiceFactory.instance( channel ).getInfo( channelKey );

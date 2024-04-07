@@ -7,6 +7,7 @@ import { RefreshCatch } from "@/modules/management/refresh";
 import { INewsConfig } from "#/hot-news/module/NewsConfig";
 import { getRandomNumber } from "@/utils/random";
 import { sleep } from "@/utils/async";
+import bot from "ROOT";
 
 export class ScheduleNews {
 	private readonly bot: BOT;
@@ -71,10 +72,14 @@ export class ScheduleNews {
 	public createBiliSchedule(): void {
 		// B站动态定时轮询任务
 		scheduleJob( "hot-news-bilibili-dynamic-job", this.config.biliDynamicScheduleRule, async () => {
+			const start = Date.now();
+			this.bot.logger.debug( "[hot-news] B站动态轮询开始..." );
 			// 加点随机延时，看不规律的请求能否避开风控
 			const time: number = getRandomNumber( 1000, 15000 );
 			await sleep( time );
 			await this.notifyBiliDynamic();
+			const end = Date.now();
+			this.bot.logger.debug( `[hot-news] B站动态轮询结束，用时：${ ( end - start ) / 1000 | 0 } 秒` );
 		} );
 		this.bot.logger.info( "[hot-news] [bilibili-dynamic-job] B站动态定时任务已创建完成..." );
 		
@@ -87,7 +92,7 @@ export class ScheduleNews {
 	
 	public async initBiliDynamic( uid: number ): Promise<void> {
 		this.bot.logger.info( `[hot-news] 开始初始化B站[${ uid }]动态数据...` )
-		const dynamic_list = await getBiliDynamicNew( uid, true );
+		const dynamic_list = await getBiliDynamicNew( uid );
 		if ( dynamic_list.length > 0 ) {
 			const ids: string[] = dynamic_list.map( d => d.id_str );
 			await this.bot.redis.addSetMember( `${ DB_KEY.bili_dynamic_ids_key }.${ uid }`, ...ids );
@@ -97,13 +102,13 @@ export class ScheduleNews {
 	
 	public async initAllBiliDynamic(): Promise<void> {
 		this.bot.logger.info( `[hot-news]开始初始化B站所有已订阅的UP主的动态数据...` )
-		const allSubsIds: { [key: string]: string } = await this.bot.redis.getHash( DB_KEY.notify_bili_ids_key );
-		const uidList: number[] = [];
-		const uidStrList = Object.values( allSubsIds ) || [];
-		for ( let value of uidStrList ) {
-			const uids: number[] = JSON.parse( value );
-			uidList.push( ...uids );
-		}
+		const subs = await bot.redis.getHash( DB_KEY.notify_bili_ids_key );
+		const all_subs: string[] = Object.values( subs );
+		if ( all_subs.length === 0 ) return;
+		
+		const uidList: Set<number> = new Set<number>(
+			all_subs.flatMap( value => JSON.parse( value ) )
+		);
 		
 		for ( let uid of uidList ) {
 			await this.initBiliDynamic( uid );

@@ -6,7 +6,6 @@ import cfgList from "#/hot-news/commands";
 import bot from "ROOT";
 import routers from "#/hot-news/routes";
 import { DB_KEY } from "#/hot-news/util/constants";
-import { ChatInfo } from "#/hot-news/types/type";
 import { MessageType } from "@/modules/message";
 import { BOT } from "@/modules/bot";
 import { cancelJob } from "node-schedule";
@@ -17,24 +16,52 @@ export let config: ExportConfig<INewsConfig>;
 export let scheduleNews: ScheduleNews;
 
 export async function clearSubscribe( targetId: number, messageType: MessageType, { redis, logger }: BOT ) {
-	let member: string = JSON.stringify( { targetId, type: messageType } )
+	const tips: string = messageType === MessageType.Private ? "私聊" : "群聊";
 	// 处理原神B站动态订阅
-	const exist: boolean = await redis.existSetMember( DB_KEY.sub_bili_ids_key, member )
+	const exist: boolean = await redis.existHashKey( DB_KEY.notify_bili_ids_key, `${ targetId }` );
 	if ( exist ) {
-		await redis.delSetMember( DB_KEY.sub_bili_ids_key, member );
 		await redis.delHash( DB_KEY.notify_bili_ids_key, `${ targetId }` );
 		await redis.deleteKey( `${ DB_KEY.limit_bili_dynamic_time_key }.${ targetId }` );
-		logger.info( ` [hot-news] 已为[${ targetId }]取消订阅BiliBili动态` );
+		logger.info( ` [hot-news] 已为 ${ tips }(${ targetId }) 取消订阅BiliBili动态` );
 	}
 	
 	// 处理新闻订阅
-	const existNotify: boolean = await redis.existSetMember( DB_KEY.ids, member );
+	const existNotify: boolean = await redis.existHashKey( DB_KEY.channel, `${ targetId }` );
 	if ( existNotify ) {
-		await redis.delSetMember( DB_KEY.ids, member );
 		await redis.delHash( DB_KEY.channel, `${ targetId }` );
-		logger.info( ` [hot-news] 已为[${ targetId }]已取消订阅新闻服务` );
+		logger.info( ` [hot-news] 已为 ${ tips }(${ targetId }) 已取消订阅新闻服务` );
 	}
+	
+	await redis.delHash( DB_KEY.subscribe_chat_info_key, `${ targetId }` );
 }
+
+async function fixData( { redis }: BOT ) {
+	let sets = await redis.getSet( `hot_news.sub_bili_ids` );
+	const chat_info = {};
+	if ( sets.length > 0 ) {
+		for ( const member of sets ) {
+			const { targetId, type } = JSON.parse( member );
+			chat_info[`${ targetId }`] = `${ type }`;
+		}
+	}
+	
+	sets = await redis.getSet( `hot_news.subscribe_ids` );
+	if ( sets.length > 0 ) {
+		for ( const member of sets ) {
+			const { targetId, type } = JSON.parse( member );
+			chat_info[`${ targetId }`] = `${ type }`;
+		}
+	}
+	
+	if ( Object.keys( chat_info ).length === 0 ) {
+		return;
+	}
+	
+	await redis.setHash( DB_KEY.subscribe_chat_info_key, chat_info );
+	await redis.deleteKey( `hot_news.subscribe_ids` );
+	await redis.deleteKey( `hot_news.sub_bili_ids` );
+}
+
 
 export default definePlugin( {
 	name: "新闻订阅",
@@ -53,13 +80,12 @@ export default definePlugin( {
 			name: "新闻订阅",
 			getUser() {
 				return ( async () => {
-					const json_str: string[] = await bot.redis.getSet( DB_KEY.ids );
-					const subs: ChatInfo[] = json_str.map( value => {
-						return JSON.parse( value );
-					} );
+					const all_subs = await bot.redis.getHash( DB_KEY.channel );
+					const qq_list: number[] = Object.keys( all_subs ).map( value => parseInt( value ) );
+					const chat_info = await bot.redis.getHash( DB_KEY.subscribe_chat_info_key );
 					return {
-						person: subs.filter( value => value.type === MessageType.Private ).map( value => value.targetId ),
-						group: subs.filter( value => value.type === MessageType.Group ).map( value => value.targetId )
+						person: qq_list.filter( value => parseInt( chat_info[value] ) === MessageType.Private ),
+						group: qq_list.filter( value => parseInt( chat_info[value] ) === MessageType.Group )
 					}
 				} )()
 			},
@@ -72,13 +98,12 @@ export default definePlugin( {
 			name: "B站订阅",
 			getUser() {
 				return ( async () => {
-					const json_str: string[] = await bot.redis.getSet( DB_KEY.sub_bili_ids_key );
-					const subs: ChatInfo[] = json_str.map( value => {
-						return JSON.parse( value );
-					} );
+					const all_subs = await bot.redis.getHash( DB_KEY.notify_bili_ids_key );
+					const qq_list: number[] = Object.keys( all_subs ).map( value => parseInt( value ) );
+					const chat_info = await bot.redis.getHash( DB_KEY.subscribe_chat_info_key );
 					return {
-						person: subs.filter( value => value.type === MessageType.Private ).map( value => value.targetId ),
-						group: subs.filter( value => value.type === MessageType.Group ).map( value => value.targetId )
+						person: qq_list.filter( value => parseInt( chat_info[value] ) === MessageType.Private ),
+						group: qq_list.filter( value => parseInt( chat_info[value] ) === MessageType.Group )
 					}
 				} )()
 			},
@@ -88,8 +113,10 @@ export default definePlugin( {
 			}
 		}
 	],
-	mounted( params ) {
+	async mounted( params ) {
 		config = params.configRegister( "hot-news", NewsConfig.init );
+		// 处理旧数据
+		await fixData( params );
 		scheduleNews = new ScheduleNews( bot, config );
 		params.refreshRegister( scheduleNews );
 		params.setAlias( config.aliases );
@@ -100,7 +127,7 @@ export default definePlugin( {
 		/* 实例化渲染器 */
 		renderer = params.renderRegister( "#app", "views" );
 	},
-	unmounted() {
+	async unmounted() {
 		// 卸载插件时把定时任务清掉
 		cancelJob( "hot-news-bilibili-dynamic-job" );
 		cancelJob( "hot-news-bilibili-live-job" );

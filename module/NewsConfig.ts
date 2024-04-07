@@ -7,12 +7,7 @@ export interface INewsConfig {
 	biliDynamicScheduleRule: string;
 	/** B站直播查询定时任务规则 */
 	biliLiveScheduleRule: string;
-	/** B站动态API信息缓存时间（秒），该时间必须小于动态的轮询间隔时间 */
-	biliDynamicApiCacheTime: number;
-	/** B站直播API信息缓存时间（秒），该时间必须小于动态的轮询间隔时间 */
-	biliLiveApiCacheTime: number;
-	/** B站动态截图缓存时间（秒），该时间必须小于动态的轮询间隔时间 */
-	biliScreenshotCacheTime: number;
+	
 	/** B站直播状态缓存时间（小时），在此时间内不会再次推送该直播间 */
 	biliLiveCacheTime: number;
 	/** B站直播推送的模版消息 */
@@ -65,12 +60,7 @@ export default class NewsConfig implements INewsConfig {
 	public biliDynamicScheduleRule: string;
 	/** B站直播查询定时任务规则 */
 	public biliLiveScheduleRule: string;
-	/** B站动态API信息缓存时间（秒），该时间必须小于动态的轮询间隔时间 */
-	public biliDynamicApiCacheTime: number;
-	/** B站直播API信息缓存时间（秒），该时间必须小于动态的轮询间隔时间 */
-	public biliLiveApiCacheTime: number;
-	/** B站动态截图缓存时间（秒），该时间必须小于动态的轮询间隔时间 */
-	public biliScreenshotCacheTime: number;
+	
 	/** B站直播状态缓存时间（小时），在此时间内不会再次推送该直播间 */
 	public biliLiveCacheTime: number;
 	/** B站直播推送的模版消息 */
@@ -115,44 +105,11 @@ export default class NewsConfig implements INewsConfig {
 	 */
 	public cookie: string;
 	
-	constructor( config: any ) {
-		this.maxSubscribeNum = config.maxSubscribeNum;
-		this.biliDynamicScheduleRule = config.biliDynamicScheduleRule;
-		this.biliLiveScheduleRule = config.biliLiveScheduleRule;
-		this.biliDynamicApiCacheTime = config.biliDynamicApiCacheTime;
-		this.biliLiveApiCacheTime = config.biliLiveApiCacheTime;
-		this.biliScreenshotCacheTime = config.biliScreenshotCacheTime;
-		this.biliLiveCacheTime = config.biliLiveCacheTime;
-		this.liveTemplate = config.liveTemplate;
-		this.dynamicTemplate = config.dynamicTemplate;
-		this.articleDynamicTemplate = config.articleDynamicTemplate;
-		this.videoDynamicTemplate = config.videoDynamicTemplate;
-		this.errorMsgTemplate = config.errorMsgTemplate;
-		this.screenshotType = config.screenshotType;
-		this.subscribeMoyu = {
-			enable: config.subscribeMoyu.enable,
-			cronRule: config.subscribeMoyu.cronRule,
-			apiType: config.subscribeMoyu.apiType
-		};
-		this.pushLimit = {
-			enable: config.pushLimit.enable,
-			limitTimes: config.pushLimit.limitTimes,
-			limitTime: config.pushLimit.limitTime,
-		};
-		this.vvhanCdn = config.vvhanCdn;
-		this.aliases = config.aliases;
-		this.filterContent = config.filterContent;
-		this.filterDynamicType = config.filterDynamicType;
-		this.cookie = config.cookie;
-	}
-	
 	public static init: INewsConfig = {
 		maxSubscribeNum: 5,
 		biliDynamicScheduleRule: "0 * * * * *",
 		biliLiveScheduleRule: "0 * * * * *",
-		biliDynamicApiCacheTime: 55,
-		biliLiveApiCacheTime: 55,
-		biliScreenshotCacheTime: 55,
+		
 		biliLiveCacheTime: 20,
 		liveTemplate: "【直播通知】\n${name}开播啦!\n标题：${title}\n在线人气：${num}\n开播时长：${liveTime}\n直播间：${url}\n${img}",
 		dynamicTemplate: "【动态通知】\n${name}发布新动态了!\n动态地址：${url}\n${img}",
@@ -176,4 +133,33 @@ export default class NewsConfig implements INewsConfig {
 		filterDynamicType: [],
 		cookie: ""
 	};
+	
+	constructor( config: any ) {
+		this.maxSubscribeNum = config.maxSubscribeNum;
+		this.biliDynamicScheduleRule = config.biliDynamicScheduleRule;
+		this.biliLiveScheduleRule = config.biliLiveScheduleRule;
+		
+		this.biliLiveCacheTime = config.biliLiveCacheTime;
+		this.liveTemplate = config.liveTemplate;
+		this.dynamicTemplate = config.dynamicTemplate;
+		this.articleDynamicTemplate = config.articleDynamicTemplate;
+		this.videoDynamicTemplate = config.videoDynamicTemplate;
+		this.errorMsgTemplate = config.errorMsgTemplate;
+		this.screenshotType = config.screenshotType;
+		this.subscribeMoyu = {
+			enable: config.subscribeMoyu.enable,
+			cronRule: config.subscribeMoyu.cronRule,
+			apiType: config.subscribeMoyu.apiType
+		};
+		this.pushLimit = {
+			enable: config.pushLimit.enable,
+			limitTimes: config.pushLimit.limitTimes,
+			limitTime: config.pushLimit.limitTime,
+		};
+		this.vvhanCdn = config.vvhanCdn;
+		this.aliases = config.aliases;
+		this.filterContent = config.filterContent;
+		this.filterDynamicType = config.filterDynamicType;
+		this.cookie = config.cookie;
+	}
 }

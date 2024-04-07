@@ -1,10 +1,6 @@
 export const DB_KEY = {
-	// 订阅新闻的QQ号/QQ群号
-	ids: "hot_news.subscribe_ids",
 	// 订阅的新闻渠道
 	channel: "hot_news.subscribe_channel",
-	// 订阅bilibili的QQ号/QQ群号
-	sub_bili_ids_key: 'hot_news.sub_bili_ids',
 	// bilibili直播推送状态
 	bili_live_notified: 'hot_news.bili_live_notified',
 	// 已发布的bilibili动态ID集合
@@ -16,8 +12,6 @@ export const DB_KEY = {
 	bili_live_status_key: 'hot_news.bili_live_status',
 	// 限制bilibili动态过时的时间
 	limit_bili_dynamic_time_key: "hot_news.limit_bili_dynamic_time",
-	// 图片信息缓存
-	img_msg_key: 'hot_news.img_msg',
 	// 用户订阅的bilibili up主uid
 	notify_bili_ids_key: 'hot_news.notify_bili_ids',
 	// 摸鱼日报图的URL缓存
@@ -25,7 +19,11 @@ export const DB_KEY = {
 	'60s_img_url_key': 'hot_news.60s_img_url',
 	bili_dynamic_info_key: 'hot_news.bili_dynamic_info',
 	// 允许推送时@全体的UP
-	notify_at_all_up_key: "hot_news.notify_at_all_up."
+	notify_at_all_up_key: "hot_news.notify_at_all_up.",
+	// 订阅消息的QQ号类型，0为群，1为私聊
+	subscribe_chat_info_key: "hot_news.subscribe_chat_info",
+	// 某直播间已推送的 QQ 集合
+	bili_live_notified_list_key: 'hot_news.bili_live_notified_list.',
 }
 
 export const CHANNEL_NAME = {

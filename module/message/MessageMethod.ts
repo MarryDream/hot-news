@@ -1,9 +1,19 @@
 import bot from "ROOT";
 import { segment, Sendable } from "@/modules/lib";
 import { MessageType } from "@/modules/message";
+import { config } from "#/hot-news/init";
+import { wait } from "#/hot-news/util/tools";
 
 export class MessageMethod {
+	static count: number = 1;
+	
 	static async sendMsg( type: number, targetId: number, msg: Sendable, userID: number | "all" | string = -1 ) {
+		// 统一发消息限速
+		if ( config.pushLimit.enable && this.count > config.pushLimit.limitTimes ) {
+			await wait( config.pushLimit.limitTime * 1000 );
+			this.count = 0;
+		}
+		
 		try {
 			if ( type === MessageType.Private ) {
 				const sendMessage = bot.message.getSendMessageFunc( targetId, MessageType.Private );
@@ -12,11 +22,12 @@ export class MessageMethod {
 				const sendMessage = bot.message.getSendMessageFunc( userID, MessageType.Group, targetId );
 				await sendMessage( msg );
 			}
+			this.count++;
 		} catch ( err ) {
 			bot.logger.error( `[${ targetId }]的订阅消息发送时报错: `, err );
 		}
 	}
-
+	
 	static parseTemplate( template: string, params: Record<string, any> ): Sendable {
 		let text_message: string = template;
 		Object.keys( params ).forEach( key => {
@@ -37,12 +48,12 @@ export class MessageMethod {
 			}
 			text_message = text_message.replace( regExp, params[key] );
 		} );
-
+		
 		const img_index = template.search( /\${\s*img\s*}/ );
 		const img_last_index = template.search( /\${\s*img\s*}$/ );
 		const cover_index = template.search( /\${\s*archive\.cover\s*}/ );
 		const cover_last_index = template.search( /\${\s*archive\.cover\s*}$/ );
-
+		
 		// 截图变量位于最后
 		if ( img_last_index !== -1 ) {
 			text_message = text_message.replace( "#1", "" );
@@ -55,7 +66,7 @@ export class MessageMethod {
 			}
 			return [ text_message, params["img"] ];
 		}
-
+		
 		// 视频封面变量位于最后
 		if ( cover_last_index !== -1 ) {
 			text_message = text_message.replace( "#2", "" );
@@ -68,7 +79,7 @@ export class MessageMethod {
 			}
 			return [ text_message, cover ];
 		}
-
+		
 		// 截图变量处于中间位置
 		if ( img_index !== -1 ) {
 			const split: string[] = text_message.split( "#1" );

@@ -17,8 +17,7 @@ export default defineDirective( "order", async ( { sendMessage, messageData, red
 	}
 	
 	// 判断该用户是否有订阅
-	let member: string = JSON.stringify( { targetId, type } )
-	let [ existNews, existBili ] = await Promise.all( [ redis.existSetMember( DB_KEY.ids, member ), redis.existSetMember( DB_KEY.sub_bili_ids_key, member ) ] );
+	let [ existNews, existBili ] = await Promise.all( [ redis.existHashKey( DB_KEY.channel, `${ targetId }` ), redis.existHashKey( DB_KEY.notify_bili_ids_key, `${ targetId }` ) ] );
 	if ( !existNews && !existBili ) {
 		await sendMessage( `[${ targetId }]未订阅任何信息` );
 		return;
@@ -38,7 +37,7 @@ export default defineDirective( "order", async ( { sendMessage, messageData, red
 	const uidList: number[] = JSON.parse( uidListStr );
 	for ( let uid of uidList ) {
 		try {
-			const info = await getBiliLiveStatus( uid, true );
+			const info = await getBiliLiveStatus( uid );
 			upNames.push( `\n\t- ${ uid }${ info?.name ? `(${ info.name })` : "" }` );
 		} catch ( e ) {
 			upNames.push( `\n\t- ${ uid }` );

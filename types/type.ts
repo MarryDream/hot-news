@@ -644,23 +644,25 @@ export interface ChatInfo {
 }
 
 /**
- * @interface DynamicInfo
- * 动态信息
- * @id 动态ID
- * @name: UP的名称
- * @uid UP的UID
- * @jump_url 跳转链接
- * @pub_time 发布时间(示例: 06-24、昨天)
- * @pub_tss 动态发布的具体时间
- * @comment_num 评论数量
- * @forward_num 转发数量
- * @like_num 点赞数量
+ * @description 动态信息
+ * @param {string} id 动态ID
+ * @param {string} name UP的名称
+ * @param {number} uid UP的UID
+ * @param {string} pub_time 发布时间(示例: 06-24、昨天)
+ * @param {number} pub_ts 发布时间戳(秒)
+ * @param {string} pub_tss 动态发布的具体时间
+ * @param {number} comment_num 评论数量
+ * @param {number} forward_num 转发数量
+ * @param {number} like_num  点赞数量
+ * @param {string} [jump_url] 跳转链接
+ * @param {Object} [archive] 视频投稿信息
  */
 export interface DynamicInfo {
 	id: string;
 	name: string;
 	uid: number;
 	pub_time: string;
+	pub_ts: number;
 	pub_tss: string;
 	comment_num: number;
 	forward_num: number;
