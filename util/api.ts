@@ -48,6 +48,8 @@ const userAgent = new UserAgent( [ { deviceCategory: 'desktop' }, /Safari|Chrome
  * bili fp
  */
 let buvid_fp: string | undefined;
+// 风控时fp_count加1，超过10次则重置buvid_fp
+let fp_count = 0;
 
 export const getNews: ( channel?: string ) => Promise<string> = async ( channel: string = 'toutiao' ) => {
 	let date = formatDate( new Date() );
@@ -231,6 +233,15 @@ async function getBiliDynamicList( uid: number ): Promise<BiliDynamicCard[]> {
 		timeout: 5000,
 		headers: BILIBILI_DYNAMIC_HEADERS
 	} );
+	
+	if ( resp.data.code === -352 ) {
+		fp_count++;
+		bot.logger.warn( `获取B站[${ uid }]动态遇到风控。` );
+		if ( fp_count > 10 ) {
+			bot.logger.info( "风控次数超过10次，将重置指纹并重新生成。" );
+			return [];
+		}
+	}
 	
 	if ( resp.data.code !== 0 ) {
 		bot.logger.error( `获取B站[${ uid }]动态失败,`, resp.data );
