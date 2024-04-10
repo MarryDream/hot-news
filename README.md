@@ -45,7 +45,7 @@ git clone https://gitclone.com/github.com/BennettChina/hot-news.git
 范围: 群/私聊
 权限: 用户 (User)
 
-# 订阅原神
+# 订阅B站UP主
 命令: <header> subscribe_news 原神
 范围: 群/私聊
 权限: 用户 (User)
@@ -55,7 +55,7 @@ git clone https://gitclone.com/github.com/BennettChina/hot-news.git
 范围: 群/私聊
 权限: 用户 (User)
 
-#取消订阅(选择服务),可选服务：[新闻渠道｜原神|UP主的uid|摸鱼]
+#取消订阅(选择服务),可选服务：[新闻渠道｜UP名称|UP主的uid|摸鱼]
 命令: <header> unsubscribe_news 头条
 范围: 群/私聊
 权限: 用户 (User)

@@ -158,6 +158,11 @@ export interface Decorate {
 	type: number;
 }
 
+/**
+ * @description 用户认证类型
+ * @param {string} type 认证类型，0为个人认证，1为机构认证，127为未认证
+ * @param {string} desc 认证描述
+ */
 export interface OfficialVerify {
 	desc: string;
 	type: number;
@@ -754,4 +759,90 @@ export interface BiliOpusDetail {
 		};
 	}[];
 	type: 1;
+}
+
+/**
+ * @description 投稿信息
+ * @param {number} aid 稿件ID
+ * @param {string} bvid 稿件BV号
+ * @param {string} title 稿件标题
+ * @param {number} pubdate 发布时间戳(秒)
+ * @param {string} arcurl 稿件地址
+ * @param {string} pic 封面图地址
+ * @param {string} play 播放量
+ * @param {number} dm 弹幕数
+ * @param {number} coin 硬币数
+ * @param {number} fav 收藏数
+ * @param {string} desc 稿件简介
+ * @param {string} duration 时长，MM:SS格式
+ * @param {number} is_pay 是否付费
+ * @param {number} is_union_video 是否为联合投稿
+ * @param {number} is_charge_video 是否为充电视频
+ * @param {number} enable_vt 是否启用视频特效
+ * @param {number} vt 视频类型
+ * @param {string} vt_display 视频特效描述
+ */
+export interface Archive {
+	aid: number;
+	bvid: string;
+	title: string;
+	pubdate: number;
+	arcurl: string;
+	pic: string;
+	play: string;
+	dm: number;
+	coin: number;
+	fav: number;
+	desc: string;
+	duration: string;
+	is_pay: number;
+	is_union_video: number;
+	is_charge_video: number;
+	vt: number;
+	enable_vt: number;
+	vt_display: string;
+}
+
+/**
+ * @description 用户信息
+ * @param {string} type 固定值："bili_user"
+ * @param {number} mid 用户ID
+ * @param {string} uname 用户名
+ * @param {string} usign 用户签名
+ * @param {number} fans 粉丝数
+ * @param {number} videos 视频数
+ * @param {string} upic 用户头像
+ * @param {number} face_nft 头像是否为NFT
+ * @param {number} face_nft_type NFT类型
+ * @param {string} verify_info 尚不明确，目前是空值
+ * @param {number} level 用户等级
+ * @param {number} gender 用户性别
+ * @param {number} is_upuser 是否为UP主
+ * @param {number} is_live 是否在直播
+ * @param {number} room_id 直播间ID
+ * @param {Archive[]} res 视频列表
+ * @param {OfficialVerify} official_verify 认证信息
+ * @param {any[]} hit_columns 关键字匹配类型
+ * @param {number} is_senior_member 是否为高级会员
+ */
+export interface BiliUser {
+	type: string;
+	mid: number;
+	uname: string;
+	usign: string;
+	fans: number;
+	videos: number;
+	upic: string;
+	face_nft: number;
+	face_nft_type: number;
+	verify_info: string;
+	level: number;
+	gender: number;
+	is_upuser: number;
+	is_live: number;
+	room_id: number;
+	res: Archive[];
+	official_verify: OfficialVerify;
+	hit_columns: any[];
+	is_senior_member: number;
 }

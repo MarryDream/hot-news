@@ -1,14 +1,22 @@
 import axios, { AxiosError } from "axios";
 import bot from 'ROOT';
-import { formatDate, get_uuid, random_audio, random_canvas, random_png_end } from "#/hot-news/util/tools";
+import { formatDate, get_uuid, random_audio, random_canvas, random_png_end, randomId } from "#/hot-news/util/tools";
 import { DB_KEY } from "#/hot-news/util/constants";
-import { BiliDynamicCard, BiliLiveInfo, BiliOpusDetail, LiveUserInfo, News, UpCardInfo } from "#/hot-news/types/type";
+import {
+	BiliDynamicCard,
+	BiliLiveInfo,
+	BiliOpusDetail,
+	BiliUser,
+	LiveUserInfo,
+	News,
+	UpCardInfo
+} from "#/hot-news/types/type";
 import moment from "moment";
 import { config } from "#/hot-news/init";
 import fetch, { Response } from "node-fetch";
 import UserAgent from 'user-agents';
 import { gen_buvid_fp } from "#/hot-news/util/fp";
-import { getDmImg, getWbiSign } from "#/hot-news/util/wbi";
+import { encWbi, getDmImg, getWbiSign } from "#/hot-news/util/wbi";
 
 const API = {
 	sina: 'https://www.anyknew.com/api/v1/sites/sina',
@@ -26,6 +34,7 @@ const API = {
 	biliStat: "https://api.bilibili.com/x/relation/stat",
 	biliLiveUserInfo: "https://api.live.bilibili.com/live_user/v1/Master/info",
 	biliOpusDetail: "https://api.bilibili.com/x/polymer/web-dynamic/v1/opus/detail",
+	biliSearch: "https://api.bilibili.com/x/web-interface/wbi/search/type",
 }
 
 const NEWS_HEADERS = {
@@ -47,7 +56,14 @@ const userAgent = new UserAgent( [ { deviceCategory: 'desktop' }, /Safari|Chrome
 /**
  * bili fp
  */
-let buvid_fp: string | undefined;
+type BiliFp = {
+	buvid_fp?: string;
+	payload: string;
+}
+const fp: BiliFp = {
+	buvid_fp: undefined,
+	payload: ""
+}
 // 风控时fp_count加1，超过10次则重置buvid_fp
 let fp_count = 0;
 
@@ -132,10 +148,7 @@ async function abtest_info( uid: number ): Promise<string> {
 	}
 }
 
-/**
- * 上报并激活指纹Cookie
- */
-async function submitGateway( uid: number, randomUA: UserAgent, uuid: string ): Promise<void> {
+async function gen_payload( uid: number, randomUA: UserAgent, uuid: string ) {
 	const ua = BILIBILI_DYNAMIC_HEADERS["User-Agent"];
 	const { screenWidth, screenHeight, viewportHeight, viewportWidth } = randomUA.data;
 	const data = {
@@ -186,12 +199,22 @@ async function submitGateway( uid: number, randomUA: UserAgent, uuid: string ): 
 		"5f45": null,
 		"db46": 0
 	}
-	const payload = JSON.stringify( data );
+	return JSON.stringify( data );
+}
+
+/**
+ * 上报并激活指纹Cookie
+ */
+async function submitGateway( uid: number, randomUA: UserAgent, uuid: string ): Promise<void> {
 	// 如果已经生成的有就一直用，初次会 -352 ，后续就可正常使用，且该 cookie 值服务端会自动续期
-	buvid_fp = buvid_fp || gen_buvid_fp( payload, 31 );
-	BILIBILI_DYNAMIC_HEADERS.Cookie += `;buvid_fp=${ buvid_fp }`
+	if ( !fp.buvid_fp ) {
+		const payload = await gen_payload( uid, randomUA, uuid );
+		fp.buvid_fp = gen_buvid_fp( payload, 31 );
+		fp.payload = payload;
+	}
+	BILIBILI_DYNAMIC_HEADERS.Cookie += `;buvid_fp=${ fp.buvid_fp }`
 	await axios.post( "https://api.bilibili.com/x/internal/gaia-gateway/ExClimbWuzhi", {
-		payload
+		payload: fp.payload
 	}, {
 		headers: BILIBILI_DYNAMIC_HEADERS
 	} )
@@ -239,6 +262,8 @@ async function getBiliDynamicList( uid: number ): Promise<BiliDynamicCard[]> {
 		bot.logger.warn( `获取B站[${ uid }]动态遇到风控。` );
 		if ( fp_count > 10 ) {
 			bot.logger.info( "风控次数超过10次，将重置指纹并重新生成。" );
+			fp.buvid_fp = undefined;
+			fp.payload = "";
 			return [];
 		}
 	}
@@ -401,6 +426,32 @@ export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number
 		} )
 	} );
 	//endregion
+}
+
+export async function batchGetBiliUserNames( uids: number[] ) {
+	const response = await axios.get( API.bili_live_status, {
+		params: {
+			uids
+		},
+		headers: BILIBILI_DYNAMIC_HEADERS,
+		timeout: 5000
+	} );
+	
+	if ( response.data.code !== 0 ) {
+		bot.logger.error( `查询B站用户昵称失败,code is [${ response.data.code }], reason: ${ response.data.message || response.data.msg }` );
+		return;
+	}
+	
+	if ( Array.isArray( response.data.data ) ) {
+		return;
+	}
+	
+	const data = response.data.data;
+	const result: { [uid: number]: string } = {};
+	for ( const uid in data ) {
+		result[parseInt( uid )] = data[uid].uname;
+	}
+	return result;
 }
 
 async function getBiliLiveInfo( uid: number ): Promise<BiliLiveInfo | undefined> {
@@ -637,5 +688,81 @@ export async function getLiveUserInfo( uid: number ): Promise<LiveUserInfo | und
 		bot.logger.error( `[hot-news] 获取UP: ${ uid } 状态数据失败, reason: ${ data.message }` );
 	} catch ( e ) {
 		bot.logger.error( `[hot-news] 获取UP: ${ uid } 状态数据失败`, e );
+	}
+}
+
+async function getHomeCookie() {
+	const response = await axios.get( "https://bilibili.com/" );
+	return response.headers['set-cookie']!.map( item => {
+		return item.split( ';' )[0]
+	} ).join( ";" )
+}
+
+export async function searchBili( keyword: string, search_type: string = "bili_user" ) {
+	const cookie = await getHomeCookie();
+	const data = {
+		keyword,
+		search_type,
+		ad_resource: "5646",
+		category_id: "",
+		order: "",
+		order_sort: 0,
+		user_type: 0,
+		duration: "",
+		__refresh__: true,
+		_extra: "",
+		context: "",
+		page: 1,
+		page_size: 36,
+		from_source: "",
+		from_spmid: "333.337",
+		platform: "pc",
+		highlight: "1",
+		single_column: "0",
+		qv_id: randomId( 32, '0-9a-zA-Z' ),
+		source_tag: "3",
+		gaia_vtoken: "",
+		dynamic_offset: 0,
+		web_location: "1430654",
+	}
+	const img_key = "76e91e21c4df4e16af9467fd6f3e1095";
+	const sub_key = "ddfca332d157450784b807c59cd7921e";
+	const { wts, w_rid } = encWbi( data, img_key, sub_key );
+	const response = await axios.get( API.biliSearch, {
+		params: {
+			...data,
+			wts,
+			w_rid
+		},
+		headers: {
+			'User-Agent': userAgent.random().toString(),
+			'Cookie': cookie
+		}
+	} );
+	if ( response.data.code !== 0 ) {
+		return Promise.reject( response.data.message );
+	}
+	return response.data.data.result;
+}
+
+export async function searchBiliUser( keyword: string ): Promise<BiliUser | string> {
+	try {
+		const response = await searchBili( keyword );
+		if ( !Array.isArray( response ) ) {
+			bot.logger.warn( "[hot-news] 搜索用户失败, 接口返回数据格式错误。", JSON.stringify( response ) );
+			return "搜索用户失败，接口返回数据格式错误";
+		}
+		return response[0];
+	} catch ( error ) {
+		if ( axios.isAxiosError( error ) ) {
+			let err = <AxiosError>error;
+			bot.logger.error( `[hot-news] 搜索用户失败(axiosError), reason: ${ err.message }` );
+			return "搜索用户失败，网络错误";
+		}
+		bot.logger.error( "[hot-news] 搜索用户失败", error );
+		if ( typeof error === "string" ) {
+			return `搜索用户失败，${ error }`;
+		}
+		return "搜索用户失败";
 	}
 }

@@ -2,7 +2,7 @@ import { defineDirective, InputParameter } from "@/modules/command";
 import { getChatInfo } from "#/hot-news/util/tools";
 import { MessageType } from "@/modules/message";
 import { CHANNEL_NAME, DB_KEY } from "#/hot-news/util/constants";
-import { getBiliLiveStatus } from "#/hot-news/util/api";
+import { batchGetBiliUserNames } from "#/hot-news/util/api";
 import { config } from "#/hot-news/init";
 import { GroupMessageEvent } from "@/modules/lib";
 
@@ -35,13 +35,13 @@ export default defineDirective( "order", async ( { sendMessage, messageData, red
 	let upNames: string[] = [];
 	const uidListStr: string = await redis.getHashField( DB_KEY.notify_bili_ids_key, `${ targetId }` ) || "[]";
 	const uidList: number[] = JSON.parse( uidListStr );
-	for ( let uid of uidList ) {
-		try {
-			const info = await getBiliLiveStatus( uid );
-			upNames.push( `\n\t- ${ uid }${ info?.name ? `(${ info.name })` : "" }` );
-		} catch ( e ) {
-			upNames.push( `\n\t- ${ uid }` );
+	const users = await batchGetBiliUserNames( uidList );
+	if ( users ) {
+		for ( let uid in users ) {
+			upNames.push( `\n\t- ${ uid }(${ users[uid] })` );
 		}
+	} else {
+		upNames = uidList.map( uid => `\n\t- ${ uid }` );
 	}
 	
 	let msg: string = `[${ targetId }]的订阅信息:\n消息服务: ${ existNews ? `[${ map.join( "," ) }]` : "未订阅消息服务" }\nB站UP: ${ existBili ? `${ upNames.join( " " ) }\n您还可以订阅${ config.maxSubscribeNum - upNames.length }位UP主.` : "未订阅B站UP" }`;

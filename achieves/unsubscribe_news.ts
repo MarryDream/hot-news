@@ -1,12 +1,14 @@
 import { defineDirective, InputParameter } from "@/modules/command";
-import { CHANNEL_NAME, DB_KEY } from "#/hot-news/util/constants";
-import { getChannelKey, getChatInfo } from "#/hot-news/util/tools";
+import { DB_KEY } from "#/hot-news/util/constants";
+import { getChannel, getChatInfo } from "#/hot-news/util/tools";
 import { MessageType } from "@/modules/message";
 import { GroupMessageEvent } from "@/modules/lib";
+import { searchBiliUser } from "#/hot-news/util/api";
+import { getUpName } from "#/hot-news/util/promise";
 
 export default defineDirective( "order", async ( i: InputParameter ) => {
 	const { sendMessage, messageData, redis } = i;
-	const channel = messageData.raw_message;
+	const input = messageData.raw_message;
 	const { type, targetId } = getChatInfo( messageData );
 	if ( type === MessageType.Group ) {
 		const groupMsg = <GroupMessageEvent>messageData;
@@ -17,19 +19,21 @@ export default defineDirective( "order", async ( i: InputParameter ) => {
 	}
 	
 	// 处理原神B站动态订阅
-	let channelKey = getChannelKey( channel );
-	if ( !channelKey ) {
-		await sendMessage( `[${ channel }]不是可用的信息源。` );
-		return;
-	}
-	if ( channel === CHANNEL_NAME.genshin || ( channelKey === 401742377 ) ) {
-		await unsubscribeBili( targetId, 401742377, i );
-		return;
-	}
+	let channel = getChannel( input );
 	
 	// 处理B站UP主订阅
-	if ( typeof channelKey === "number" ) {
-		await unsubscribeBili( targetId, channelKey, i );
+	if ( channel.type === "name" ) {
+		// 搜索名称对应的uid
+		const user = await searchBiliUser( channel.name );
+		if ( typeof user === "string" ) {
+			await sendMessage( user );
+			return;
+		}
+		await unsubscribeBili( targetId, user.mid, i );
+		return;
+	}
+	if ( channel.type === "uid" ) {
+		await unsubscribeBili( targetId, channel.uid, i );
 		return;
 	}
 	
@@ -37,15 +41,13 @@ export default defineDirective( "order", async ( i: InputParameter ) => {
 	let value: string = await redis.getHashField( DB_KEY.channel, `${ targetId }` ) || "[]";
 	value = value.startsWith( "[" ) ? value : `["${ value }"]`;
 	let parse: string[] = JSON.parse( value );
-	if ( parse.length === 0 ) {
-		await sendMessage( `[${ targetId }]未订阅[${ channel }]` );
+	const _channel = channel.channel;
+	if ( parse.length === 0 || !parse.includes( _channel ) ) {
+		await sendMessage( `[${ targetId }]未订阅[${ _channel }]` );
 		return;
 	}
-	if ( !parse.includes( channelKey ) ) {
-		await sendMessage( `[${ targetId }]未订阅[${ channel }]` );
-		return;
-	}
-	const filter = parse.filter( v => v && v !== channelKey && v !== CHANNEL_NAME.genshin );
+	
+	const filter = parse.filter( v => v && v !== _channel );
 	if ( filter.length === 0 ) {
 		await redis.delHash( DB_KEY.channel, `${ targetId }` );
 	} else {
@@ -59,16 +61,14 @@ export default defineDirective( "order", async ( i: InputParameter ) => {
 	await sendMessage( `[${ targetId }]已取消订阅[${ channel }]服务` );
 } );
 
-async function unsubscribeBili( targetId: number, uid: number, {
-	redis,
-	sendMessage
-}: InputParameter ) {
+async function unsubscribeBili( targetId: number, uid: number, i: InputParameter ) {
+	const { redis, sendMessage } = i;
 	const uidListStr = await redis.getHashField( DB_KEY.notify_bili_ids_key, `${ targetId }` ) || "[]";
 	const uidList: number[] = JSON.parse( uidListStr );
 	if ( uidList.length === 0 ) {
 		await sendMessage( `[${ targetId }]未订阅任何B站UP的动态和直播` );
 	} else {
-		const name = uid === 401742377 ? "原神" : `${ uid }`;
+		const name = await getUpName( uid, i ) || `${ uid }`;
 		if ( uidList.includes( uid ) ) {
 			// 把已推送 QQ 从列表中移除，避免影响其他订阅
 			await redis.delListElement( DB_KEY.bili_live_notified_list_key + uid, `${ targetId }` );
@@ -84,7 +84,7 @@ async function unsubscribeBili( targetId: number, uid: number, {
 				await redis.delHash( DB_KEY.subscribe_chat_info_key, `${ targetId }` );
 			}
 			
-			await sendMessage( `[${ targetId }]已成功取消订阅过B站[${ name }]的动态和直播。` );
+			await sendMessage( `[${ targetId }]已成功取消B站[${ name }]的订阅。` );
 			return;
 		}
 		

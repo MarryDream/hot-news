@@ -41,20 +41,27 @@ export const getChatInfo: ( messageData: Message ) => ChatInfo = ( messageData )
 	}
 }
 
-export const getChannelKey: ( channel: string ) => ( string | number | null ) = ( channel ) => {
-	const reg = new RegExp( /^[0-9]+$/ );
-	const isNumber = reg.test( channel );
-	if ( isNumber ) {
-		return parseInt( reg.exec( channel )![0] );
-	}
+type UidChannel = { type: "uid", uid: number };
+type NewsChannel = { type: "news", channel: string };
+type NameChannel = { type: "name", name: string };
+export type Channel = UidChannel | NewsChannel | NameChannel;
+
+export const getChannel = ( input: string ): Channel => {
+	const reg = new RegExp( /(?<news>新浪|知乎|网易|头条|百度|60秒新闻|摸鱼)|(?<uid>\d+)|(?<name>.*)/ );
+	const { news, uid, name } = reg.exec( input )?.groups!;
+	
+	if ( uid ) return { type: "uid", uid: parseInt( uid ) };
 	
 	for ( let k in CHANNEL_NAME ) {
-		if ( CHANNEL_NAME[k] === channel ) {
-			return k;
+		if ( CHANNEL_NAME[k] === news ) {
+			return {
+				type: "news",
+				channel: k
+			};
 		}
 	}
 	
-	return null;
+	return { type: "name", name };
 }
 
 /**
@@ -192,4 +199,40 @@ export function random_audio() {
 	const min: number = 124.04347;
 	const max: number = 124.04348;
 	return Math.random() * ( max - min ) + min;
+}
+
+export function randomId( length: number, seed?: string ): string {
+	// 如果characterSet是未定义的或者不是字符串，则使用默认字符集
+	if ( typeof seed !== 'string' ) {
+		seed = '[*]';
+	}
+	
+	// 根据characterSet的值设置不同的字符集
+	let charPool = '';
+	if ( seed === '[*]' ) {
+		// 包含数字、小写字母、大写字母和特殊字符
+		charPool = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~`!@#$%^&*()-_+=[]{};:"\',<.>/?';
+	} else {
+		// 根据characterSet包含的字符来构建字符集
+		if ( /0-9/.test( seed ) ) charPool += '0123456789';
+		if ( /a-z/.test( seed ) ) charPool += 'abcdefghijklmnopqrstuvwxyz';
+		if ( /A-Z/.test( seed ) ) charPool += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+		if ( /\[s\]/.test( seed ) ) charPool += '~`!@#$%^&*()-_+=[]{};:"\',<.>/?';
+	}
+	
+	// 确保字符集不为空
+	if ( charPool === '' ) {
+		throw new Error( 'Invalid character set specified.' );
+	}
+	
+	// 生成随机ID
+	let id = '';
+	for ( let i = 0; i < length; i++ ) {
+		// 从字符集中随机选择一个字符
+		const randomIndex = Math.floor( Math.random() * charPool.length );
+		id += charPool[randomIndex];
+	}
+	
+	// 返回生成的随机ID
+	return id;
 }

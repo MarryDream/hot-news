@@ -13,7 +13,7 @@ const subscribe_news: OrderConfig = {
 	main: "achieves/subscribe_news",
 	detail: "订阅每日热点新闻、B站动态、摸鱼日报，可用的订阅源包括：\n" +
 		"- 新闻源：新浪、知乎、网易、头条、百度、60秒新闻。默认使用头条，仅可使用一个新闻源覆盖订阅(每天8:30~9点推送)。\n" +
-		"- B站源：原神，也可以使用B站UP的uid来订阅该UP的动态和直播。\n" +
+		"- B站源：用UP名称或UID，来订阅该UP的动态和直播。\n" +
 		"- 摸鱼日报源：摸鱼。"
 };
 
@@ -28,7 +28,7 @@ const unsubscribe_news: OrderConfig = {
 	main: "achieves/unsubscribe_news",
 	detail: "取消订阅的消息。可用订阅源：\n" +
 		"- 新闻源: 新浪、知乎、网易、头条、百度、60秒新闻\n" +
-		"- B站源: 原神、B站UP主的uid\n" +
+		"- B站源: UP名称或UID\n" +
 		"- 摸鱼日报: 摸鱼"
 };
 
