@@ -264,8 +264,9 @@ async function getBiliDynamicList( uid: number ): Promise<BiliDynamicCard[]> {
 			bot.logger.info( "风控次数超过10次，将重置指纹并重新生成。" );
 			fp.buvid_fp = undefined;
 			fp.payload = "";
-			return [];
+			fp_count = 0;
 		}
+		return [];
 	}
 	
 	if ( resp.data.code !== 0 ) {
