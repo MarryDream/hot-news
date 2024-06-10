@@ -16,6 +16,7 @@ import { MessageMethod } from "#/hot-news/module/message/MessageMethod";
 import { RenderResult } from "@/modules/renderer";
 import { ScreenshotService } from "#/hot-news/module/screenshot/ScreenshotService";
 import { Viewport } from "puppeteer";
+import { getTargetQQMap } from "#/hot-news/util/format";
 
 export class BiliDynamicImpl implements NewsService {
 	private readonly viewPort: Viewport = {
@@ -30,15 +31,11 @@ export class BiliDynamicImpl implements NewsService {
 	
 	async handler(): Promise<void> {
 		const subs = await bot.redis.getHash( DB_KEY.notify_bili_ids_key );
-		const all_subs: string[] = Object.values( subs );
-		const qq_list: string[] = Object.keys( subs );
-		if ( all_subs.length === 0 ) return;
+		const uid_qq_map = getTargetQQMap<number>( subs );
 		
-		const uidList: Set<number> = new Set<number>(
-			all_subs.flatMap( value => JSON.parse( value ) )
-		);
+		if ( !uid_qq_map.size ) return;
 		
-		for ( const uid of uidList ) {
+		for ( const [ uid, qq_list ] of uid_qq_map ) {
 			// B站动态信息推送
 			const cards: BiliDynamicCard[] = await getBiliDynamicNew( uid );
 			
@@ -125,7 +122,7 @@ export class BiliDynamicImpl implements NewsService {
 		return false;
 	}
 	
-	private async normalDynamicHandle( dynamicInfo: DynamicInfo, qq_list: string[] ): Promise<void> {
+	private async normalDynamicHandle( dynamicInfo: DynamicInfo, qq_list: Set<string> ): Promise<void> {
 		const {
 			id, name, uid, pub_time, pub_ts, pub_tss, like_num,
 			comment_num, forward_num, archive, jump_url
@@ -213,7 +210,7 @@ export class BiliDynamicImpl implements NewsService {
 		}
 	}
 	
-	private async articleHandle( card: BiliDynamicCard, qq_list: string[] ): Promise<void> {
+	private async articleHandle( card: BiliDynamicCard, qq_list: Set<string> ): Promise<void> {
 		let desc = "", title = "", jump_url = "", label = "";
 		if ( card.modules.module_dynamic.major?.type === 'MAJOR_TYPE_ARTICLE' ) {
 			const {

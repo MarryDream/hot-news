@@ -58,7 +58,7 @@ export default defineDirective( "order", async ( i: InputParameter ) => {
 	if ( !existNews && !existBili ) {
 		await redis.delHash( DB_KEY.subscribe_chat_info_key, `${ targetId }` );
 	}
-	await sendMessage( `[${ targetId }]已取消订阅[${ channel }]服务` );
+	await sendMessage( `[${ targetId }]已取消订阅[${ input }]服务` );
 } );
 
 async function unsubscribeBili( targetId: number, uid: number, i: InputParameter ) {
