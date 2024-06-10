@@ -3,16 +3,25 @@ import { segment, Sendable } from "@/modules/lib";
 import bot from "ROOT";
 import { DB_KEY } from "#/hot-news/util/constants";
 import { MessageMethod } from "#/hot-news/module/message/MessageMethod";
-import { get60s } from "#/hot-news/util/api";
+import { set60s } from "#/hot-news/util/api";
 import { getTargetQQMap } from "#/hot-news/util/format";
+import { renderer } from "#/hot-news/init";
 
 /**
  * 60s看到世界新闻，返回一张图片
  */
 export class SixtySecondsWatchNews implements NewsService {
-	async getInfo( channel?: string ): Promise<Sendable> {
-		const api = await get60s();
-		return segment.image( api );
+	async getInfo(): Promise<Sendable> {
+		const result = await set60s();
+		if ( !result ) {
+			return "暂未获取到今日的60s新闻，请稍后再试";
+		}
+		const res = await renderer.asSegment( "/sixty/index.html" )
+		if ( res.code === "ok" ) {
+			return res.data;
+		} else {
+			throw new Error( res.error );
+		}
 	}
 
 	async handler(): Promise<void> {
@@ -28,9 +37,8 @@ export class SixtySecondsWatchNews implements NewsService {
 		let msg: Sendable = "";
 		try {
 			msg = await this.getInfo();
-		} catch ( e ) {
-			bot.logger.info( `[hot-news] 获取60s新闻图error.`, e );
-			return;
+		} catch ( error ) {
+			throw error;
 		}
 
 		bot.logger.info( `[hot-news] - 获取到60s新闻图: `, msg );
