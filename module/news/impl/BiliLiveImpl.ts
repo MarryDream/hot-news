@@ -10,6 +10,7 @@ import { MessageMethod } from "#/hot-news/module/message/MessageMethod";
 import bot from "ROOT";
 import { MessageType } from "@/modules/message";
 import { Viewport } from "puppeteer";
+import { getTargetQQMap } from "#/hot-news/util/format";
 
 export class BiliLiveImpl implements NewsService {
 	private readonly viewPort: Viewport = {
@@ -24,22 +25,18 @@ export class BiliLiveImpl implements NewsService {
 	
 	async handler(): Promise<void> {
 		const subs = await bot.redis.getHash( DB_KEY.notify_bili_ids_key );
-		const all_subs: string[] = Object.values( subs );
-		const qq_list: string[] = Object.keys( subs );
-		if ( all_subs.length === 0 ) return;
+		const uid_qq_map = getTargetQQMap<number>( subs );
 		
-		const uidList: Set<number> = new Set<number>(
-			all_subs.flatMap( value => JSON.parse( value ) )
-		);
+		if ( !uid_qq_map.size ) return;
 		
-		for ( const uid of uidList ) {
+		for ( const [ uid, qq_list ] of uid_qq_map ) {
 			// B站直播推送
 			const number = await bot.redis.getListLength( DB_KEY.bili_live_notified_list_key + uid );
 			const live: BiliLiveInfo | undefined = await getBiliLiveStatus( uid );
 			// 查询异常跳过
 			if ( !live ) continue;
 			
-			if ( number < qq_list.length && live.liveRoom?.liveStatus === 1 ) {
+			if ( number < qq_list.size && live.liveRoom?.liveStatus === 1 ) {
 				// 直播开始
 				bot.logger.info( `[hot-news] UID:${ uid }(${ live.name })的直播开始了，标题: ${ live.liveRoom.title }` );
 				const {
@@ -105,7 +102,7 @@ export class BiliLiveImpl implements NewsService {
 			}
 			
 			// 直播结束
-			if ( number >= qq_list.length && ( live?.liveRoom?.liveStatus === 0 || live.liveRoom?.liveStatus === 2 ) ) {
+			if ( number >= qq_list.size && ( live?.liveRoom?.liveStatus === 0 || live.liveRoom?.liveStatus === 2 ) ) {
 				const notification_status: string = await bot.redis.getString( `${ DB_KEY.bili_live_notified }.${ uid }` ) || "{}";
 				const cache_live: BiliLiveInfo = JSON.parse( notification_status );
 				const live_time: number = cache_live?.liveRoom?.live_time || 0;

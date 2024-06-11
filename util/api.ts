@@ -17,6 +17,7 @@ import fetch, { Response } from "node-fetch";
 import UserAgent from 'user-agents';
 import { gen_buvid_fp } from "#/hot-news/util/fp";
 import { encWbi, getDmImg, getWbiSign } from "#/hot-news/util/wbi";
+import { isJsonString } from "@/utils/verify";
 
 const API = {
 	sina: 'https://www.anyknew.com/api/v1/sites/sina',
@@ -562,42 +563,41 @@ export function getMoyuUrl(): string {
 	return API.moyu2.replace( "$", today );
 }
 
-export async function get60s(): Promise<string> {
-	const today: string = formatDate( new Date(), "" );
-	let api = API["60s"].replace( "$", today );
-	if ( !config.vvhanCdn ) {
-		return Promise.resolve( `${ API['60s'] }?ts=${ today }` );
-	}
-	api = api.replace( "https://api.vvhan.com", config.vvhanCdn );
-	let key = `${ DB_KEY["60s_img_url_key"] }.${ today }`;
-	const url = await bot.redis.getString( key );
-	if ( url ) {
-		return url;
-	}
+// 存储当日 60s 新闻
+export async function set60s(): Promise<boolean> {
+	const todayStr = moment().format( "MM月DD日" );
+	let key = `${ DB_KEY["60s_img_data_key"] }.${ todayStr }`;
 	
-	const headers = {
-		"Referer": "https://hibennett.cn/?bot=SilveryStar/Adachi-BOT&plugin=hot-news&version=v1"
-	}
+	const data = await bot.redis.getString( key );
+	if ( isJsonString( data ) ) return true;
 	
-	return new Promise( ( resolve, reject ) => {
-		axios.get( api, { params: { type: 'json' }, timeout: 10000, headers } )
-			.then( response => {
-				if ( response.data.success ) {
-					const imgUrl = response.data["imgUrl"];
-					resolve( imgUrl );
-					bot.redis.setString( key, imgUrl, 3600 );
-				}
-			} ).catch( ( reason ): any => {
-			if ( axios.isAxiosError( reason ) ) {
-				let err = <AxiosError>reason;
-				bot.logger.error( `获取60秒新闻图失败(axiosError), reason: ${ err.message }` );
-				reject( err.message );
-			} else {
-				bot.logger.error( "获取60s新闻图失败, reason:", reason );
-				reject( reason );
-			}
-		} )
-	} );
+	try {
+		let api = API["60s"];
+		if ( config.vvhanCdn ) {
+			api = api.replace( "https://api.vvhan.com", config.vvhanCdn );
+		}
+		const headers = {
+			"Referer": "https://hibennett.cn/?bot=SilveryStar/Adachi-BOT&plugin=hot-news&version=v1"
+		}
+		const { data } = await axios.get( api, { headers } );
+		if ( !data?.success ) {
+			throw new Error( data?.data || "未知错误" );
+		}
+		// 此时未获取到当天的数据
+		if ( data.time !== todayStr ) {
+			return false;
+		}
+		key = `${ DB_KEY["60s_img_data_key"] }.${ data.time }`;
+		bot.redis.setString( key, JSON.stringify( data ), 3600 );
+		return true;
+	} catch ( reason ) {
+		if ( axios.isAxiosError( reason ) ) {
+			const err = <AxiosError>reason;
+			throw new Error( `[hot-news] - 获取60秒新闻图失败(axiosError), reason: ${ err.message }` );
+		} else {
+			throw new Error( `[hot-news] - 获取60秒新闻图失败, reason: ${ reason }` );
+		}
+	}
 }
 
 export async function getUpInfoFromArticle( uid: number, jump_url: string ): Promise<UpCardInfo | undefined> {
