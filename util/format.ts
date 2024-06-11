@@ -8,7 +8,7 @@ export function getTargetQQMap<T>( subs: Record<string, string>, format?: ( subS
 
 		try {
 			const sub = JSON.parse( subStr );
-			if ( !( sub instanceof Array ) ) continue;
+			if ( !( Array.isArray( sub ) ) ) continue;
 			sub.forEach( ( uid: T ) => {
 				const qqList = target_qq_map.get( uid ) || new Set<string>();
 				qqList.add( qq );

@@ -846,3 +846,10 @@ export interface BiliUser {
 	hit_columns: any[];
 	is_senior_member: number;
 }
+
+export type SixtyNews = {
+	title: string;
+	banner: string;
+	time: string;
+	data: string[];
+}

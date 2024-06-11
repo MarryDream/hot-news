@@ -1,6 +1,14 @@
 import axios, { AxiosError } from "axios";
 import bot from 'ROOT';
-import { formatDate, get_uuid, random_audio, random_canvas, random_png_end, randomId } from "#/hot-news/util/tools";
+import {
+	formatDate,
+	get_uuid,
+	random_audio,
+	random_canvas,
+	random_png_end,
+	randomId,
+	transferText
+} from "#/hot-news/util/tools";
 import { DB_KEY } from "#/hot-news/util/constants";
 import {
 	BiliDynamicCard,
@@ -9,6 +17,7 @@ import {
 	BiliUser,
 	LiveUserInfo,
 	News,
+	SixtyNews,
 	UpCardInfo
 } from "#/hot-news/types/type";
 import moment from "moment";
@@ -30,7 +39,7 @@ const API = {
 	bili_live_status: 'https://api.live.bilibili.com/room/v1/Room/get_status_info_by_uids',
 	moyu: 'https://api.vvhan.com/api/moyu?type=json',
 	moyu2: 'https://api.j4u.ink/proxy/redirect/moyu/calendar/$.png',
-	"60s": 'https://api.vvhan.com/api/60s',
+	"60s": 'https://www.zhihu.com/api/v4/columns/c_1715391799055720448/items?limit=2',
 	biliCard: "https://api.bilibili.com/x/web-interface/card",
 	biliStat: "https://api.bilibili.com/x/relation/stat",
 	biliLiveUserInfo: "https://api.live.bilibili.com/live_user/v1/Master/info",
@@ -566,29 +575,42 @@ export function getMoyuUrl(): string {
 // 存储当日 60s 新闻
 export async function set60s(): Promise<boolean> {
 	const todayStr = moment().format( "MM月DD日" );
-	let key = `${ DB_KEY["60s_img_data_key"] }.${ todayStr }`;
+	let key = `${ DB_KEY["60s_img_data_key"] }.${ moment().format( "yyyyMMDD" ) }`;
 	
-	const data = await bot.redis.getString( key );
-	if ( isJsonString( data ) ) return true;
+	const cache = await bot.redis.getString( key );
+	if ( isJsonString( cache ) ) return true;
 	
 	try {
-		let api = API["60s"];
-		if ( config.vvhanCdn ) {
-			api = api.replace( "https://api.vvhan.com", config.vvhanCdn );
-		}
-		const headers = {
-			"Referer": "https://hibennett.cn/?bot=SilveryStar/Adachi-BOT&plugin=hot-news&version=v1"
-		}
-		const { data } = await axios.get( api, { headers } );
-		if ( !data?.success ) {
-			throw new Error( data?.data || "未知错误" );
-		}
-		// 此时未获取到当天的数据
-		if ( data.time !== todayStr ) {
+		const response = await axios.get( API["60s"] );
+		const data = response.data.data || [];
+		const { content = '', title_image = '', updated = 0 } = data[0];
+		// 不是今天的新闻就不再处理了
+		if ( !moment( updated * 1000 ).isSame( Date.now(), 'day' ) ) {
 			return false;
 		}
-		key = `${ DB_KEY["60s_img_data_key"] }.${ data.time }`;
-		bot.redis.setString( key, JSON.stringify( data ), 3600 );
+		// copy from https://github.com/vikiboss/60s/blob/main/src/services/60s.ts
+		const reg = /<p\s+data-pid=[^<>]+>([^<>]+)<\/p>/g;
+		const tagReg = /<[^<>]+>/g;
+		const contents: string[] = content.match( reg ) ?? [];
+		const mapFn = ( e: string ) => transferText( e.replace( tagReg, '' ).trim(), 'a2u' );
+		const result = contents.map( mapFn );
+		if ( !result.length ) return false;
+		
+		const news = ( result || [] ).map( ( e ) => {
+			return e
+				.replace( /^\d+、\s*/g, '' )
+				.replace( /。$/, '' )
+				.trim()
+		} )
+		
+		const sixtyNews: SixtyNews = {
+			title: "在这里每天60秒读懂世界",
+			banner: title_image,
+			time: todayStr,
+			data: news
+		};
+		
+		await bot.redis.setString( key, JSON.stringify( sixtyNews ), 3600 );
 		return true;
 	} catch ( reason ) {
 		if ( axios.isAxiosError( reason ) ) {

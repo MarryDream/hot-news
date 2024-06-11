@@ -236,3 +236,11 @@ export function randomId( length: number, seed?: string ): string {
 	// 返回生成的随机ID
 	return id;
 }
+
+export function transferText( str: string, mode: 'u2a' | 'a2u' ) {
+	if ( mode === 'a2u' ) {
+		return str.replace( /&#(\d+);/g, ( _, $1 ) => String.fromCharCode( Number( $1 ) ) )
+	} else {
+		return str.replace( /./, ( _ ) => `&#${ _.charCodeAt( 0 ) };` )
+	}
+}

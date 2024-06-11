@@ -4,7 +4,7 @@ import { DB_KEY } from "#/hot-news/util/constants";
 import moment from "moment";
 
 export default express.Router().get( "/", async ( req, res ) => {
-	const todayStr = moment().format( "MM月DD日" );
+	const todayStr = moment().format( "yyyyMMDD" );
 	const cache = await bot.redis.getString( `${ DB_KEY["60s_img_data_key"] }.${ todayStr }` );
 	try {
 		res.send( JSON.parse( cache ) );
