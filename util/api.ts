@@ -649,7 +649,7 @@ export async function getArticleHtml( jump_url: string ): Promise<string> {
 	const ua = userAgent.random().toString();
 	const response: Response = await fetch( `https:${ jump_url }`, {
 		headers: {
-			"user-agent": ua
+			"User-Agent": ua
 		}
 	} );
 	return await response.text();
