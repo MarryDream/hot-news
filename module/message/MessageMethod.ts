@@ -7,7 +7,7 @@ import { wait } from "#/hot-news/util/tools";
 export class MessageMethod {
 	static count: number = 1;
 	
-	static async sendMsg( type: number, targetId: number, msg: Sendable, userID: number | "all" | string = -1 ) {
+	static async sendMsg( type: number, targetId: number | string, msg: Sendable, userID?: number | "all" | string ) {
 		// 统一发消息限速
 		if ( config.pushLimit.enable && this.count > config.pushLimit.limitTimes ) {
 			await wait( config.pushLimit.limitTime * 1000 );
@@ -16,10 +16,10 @@ export class MessageMethod {
 		
 		try {
 			if ( type === MessageType.Private ) {
-				const sendMessage = bot.message.getSendMessageFunc( targetId, MessageType.Private );
+				const sendMessage = bot.message.createMessageSender( MessageType.Private, targetId );
 				await sendMessage( msg );
 			} else {
-				const sendMessage = bot.message.getSendMessageFunc( userID, MessageType.Group, targetId );
+				const sendMessage = bot.message.createMessageSender( MessageType.Group, targetId, userID );
 				await sendMessage( msg );
 			}
 			this.count++;

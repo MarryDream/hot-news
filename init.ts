@@ -111,6 +111,23 @@ export default definePlugin( {
 				const messageType: MessageType = type === "private" ? MessageType.Private : MessageType.Group;
 				await clearSubscribe( userId, messageType, bot );
 			}
+		},
+		{
+			name: "短信订阅",
+			getUser() {
+				return ( async () => {
+					const sms_sub = await bot.redis.getHash( DB_KEY.sms_key );
+					const qq_list: number[] = Object.keys( sms_sub ).map( value => parseInt( value ) );
+					return {
+						person: qq_list
+					}
+				} )()
+			},
+			async reSub( userId, type ) {
+				if ( type === "group" ) return;
+				await bot.redis.delHash( DB_KEY.sms_key, `${ userId }` );
+				await bot.redis.delHash( DB_KEY.sms_secret, `${ userId }` );
+			}
 		}
 	],
 	async mounted( params ) {

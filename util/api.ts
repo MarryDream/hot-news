@@ -440,6 +440,7 @@ export const getBiliLive: ( uid: number, no_cache?: boolean, cache_time?: number
 }
 
 export async function batchGetBiliUserNames( uids: number[] ) {
+	if ( !uids || uids.length === 0 ) return;
 	const response = await axios.get( API.bili_live_status, {
 		params: {
 			uids

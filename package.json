@@ -3,11 +3,14 @@
   "private" : true,
   "author" : "Bennett",
   "description" : "消息推送服务插件",
-  "version" : "2.1.4",
+  "version" : "2.2.0",
   "dependencies" : {
-    "user-agents" : "^1.1.239"
+    "gm-crypto" : "^0.1.12",
+    "user-agents" : "^1.1.239",
+    "crypto-js" : "^4.2.0"
   },
   "devDependencies" : {
-    "@types/user-agents" : "^1.0.4"
+    "@types/user-agents" : "^1.0.4",
+    "@types/crypto-js" : "^4.2.2"
   }
 }

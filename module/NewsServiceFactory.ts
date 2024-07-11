@@ -5,6 +5,7 @@ import { MessAroundServiceImpl } from "#/hot-news/module/news/impl/MessAroundSer
 import { SixtySecondsWatchNews } from "#/hot-news/module/news/impl/SixtySecondsWatchNews";
 import { BiliDynamicImpl } from "#/hot-news/module/news/impl/BiliDynamicImpl";
 import { BiliLiveImpl } from "#/hot-news/module/news/impl/BiliLiveImpl";
+import { SmsWebhookImpl } from "#/hot-news/module/news/impl/SmsWebhookImpl";
 
 export class NewsServiceFactory {
 	/**
@@ -26,7 +27,9 @@ export class NewsServiceFactory {
 			case "biliDynamic":
 				return new BiliDynamicImpl();
 			case "biliLive":
-				return new BiliLiveImpl()
+				return new BiliLiveImpl();
+			case "sms":
+				return new SmsWebhookImpl();
 			default:
 				throw "不支持的订阅渠道";
 		}

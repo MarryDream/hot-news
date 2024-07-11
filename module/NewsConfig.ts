@@ -51,6 +51,11 @@ export interface INewsConfig {
 	 * B站个人Cookie
 	 */
 	cookie: string;
+	
+	/**
+	 * 开启 webhook 使用的域名/IP
+	 */
+	apiDomain: string;
 }
 
 export default class NewsConfig implements INewsConfig {
@@ -131,8 +136,13 @@ export default class NewsConfig implements INewsConfig {
 		aliases: [ "消息订阅", "新闻订阅", "热点新闻" ],
 		filterContent: "恭喜.*中奖",
 		filterDynamicType: [],
-		cookie: ""
+		cookie: "",
+		apiDomain: ""
 	};
+	/**
+	 * 开启 webhook 使用的域名/IP
+	 */
+	public apiDomain: string;
 	
 	constructor( config: any ) {
 		this.maxSubscribeNum = config.maxSubscribeNum;
@@ -161,5 +171,6 @@ export default class NewsConfig implements INewsConfig {
 		this.filterContent = config.filterContent;
 		this.filterDynamicType = config.filterDynamicType;
 		this.cookie = config.cookie;
+		this.apiDomain = config.apiDomain;
 	}
 }

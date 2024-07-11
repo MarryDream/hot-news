@@ -25,6 +25,10 @@ export const DB_KEY = {
 	subscribe_chat_info_key: "hot_news.subscribe_chat_info",
 	// 某直播间已推送的 QQ 集合
 	bili_live_notified_list_key: 'hot_news.bili_live_notified_list.',
+	// 短信服务的QQ号码
+	sms_key: "hot_news.sms_subscribe_key",
+	// 短信服务的密钥
+	sms_secret: "hot_news.sms_secret"
 }
 
 export const CHANNEL_NAME = {

@@ -75,6 +75,16 @@ git clone https://gitclone.com/github.com/BennettChina/hot-news.git
 命令: <header> rms [群号]
 范围: 私聊
 权限: BOT管理员 (Manager)
+
+# 申请短信订阅
+命令: <header> 订阅短信
+范围: 私聊
+权限: 用户 (User)
+
+# 取消短信订阅
+命令: <header> 取消订阅短信
+范围: 私聊
+权限: 用户 (User)
 ```
 
 ## 插件配置
@@ -160,6 +170,8 @@ filterDynamicType:
     reg: 互动抽奖
 # B站个人已登录的Cookie
 cookie: ""
+# 短信订阅webhook服务使用的域名
+apiDomain: ""
 ```
 
 ### 模版消息配置

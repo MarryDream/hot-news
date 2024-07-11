@@ -1,4 +1,4 @@
-import { ConfigType, OrderConfig } from "@/modules/command";
+import { ConfigType, EnquireConfig, OrderConfig } from "@/modules/command";
 import { MessageScope } from "@/modules/message";
 import { AuthLevel } from "@/modules/management/auth";
 
@@ -92,6 +92,31 @@ const unset_at_all: OrderConfig = {
 	detail: "该指令用于移除允许在直播推送时@全体的UP。"
 };
 
+const sms: EnquireConfig = {
+	type: "enquire",
+	cmdKey: "hot-news.sms-webhook",
+	desc: [ "申请接收短信服务", "" ],
+	headers: [ "订阅短信" ],
+	scope: MessageScope.Private,
+	auth: AuthLevel.User,
+	timeout: 60,
+	main: "achieves/sms/apply",
+	detail: "该指令用于申请一个可以接收短信的Webhook地址，并将后续的短信推送给用户。本服务通过 SmsForwarder App 实现，请访问该在线文档 https://gitee.com/pp/SmsForwarder/wikis/pages " +
+		"了解该 App 后再考虑是否使用本服务。"
+};
+
+const remove_sms: OrderConfig = {
+	type: "order",
+	cmdKey: "hot-news.remove_sms_webhook",
+	desc: [ "移除短信服务", "" ],
+	headers: [ "取消订阅短信" ],
+	regexps: [ "" ],
+	scope: MessageScope.Private,
+	auth: AuthLevel.User,
+	main: "achieves/sms/remove_sms",
+	detail: "该指令用于移除之前申请的短信服务。"
+}
+
 export default <ConfigType[]>[
 	subscribe_news,
 	unsubscribe_news,
@@ -99,5 +124,7 @@ export default <ConfigType[]>[
 	remove_subscribe,
 	limit_genshin_dynamic_notify,
 	set_at_all,
-	unset_at_all
+	unset_at_all,
+	sms,
+	remove_sms,
 ]

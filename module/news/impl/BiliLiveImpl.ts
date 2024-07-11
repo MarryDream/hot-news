@@ -85,10 +85,10 @@ export class BiliLiveImpl implements NewsService {
 					}
 					
 					// 判断是否运行 at 全体
-					let userID: number | "all" | string = -1;
+					let userID: number | "all" | string | undefined;
 					if ( parseInt( type ) === MessageType.Group ) {
 						const key = `${ DB_KEY.notify_at_all_up_key }${ qq }`;
-						userID = await bot.redis.existListElement( key, uid ) ? "all" : -1;
+						userID = await bot.redis.existListElement( key, uid ) ? "all" : undefined;
 					}
 					await MessageMethod.sendMsg( parseInt( type ), parseInt( qq ), msg, userID );
 					
